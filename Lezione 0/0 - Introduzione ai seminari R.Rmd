@@ -1,0 +1,51 @@
+---
+title: "Introduzione ai seminari R"
+author:
+ - Nicola Romanò
+ - nicola.romano@ed.ac.uk
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+***
+\pagenumbering{arabic}
+
+# Introduzione ai seminari
+
+Questa serie conterrà una serie di otto seminari R autoguidati.
+
+L'idea di un seminario autoguidato è che ti verrà dato un documento da seguire al tuo ritmo.
+
+Alcune parti di questa guida dovrebbero essere molto facili da seguire, in quanto solo semplici introduzioni su come eseguire alcune attività in R. 
+
+Altre parti, tuttavia, richiedono di risolvere dei problemi o imparare a usare un determinato comando tutto da solo.  Sì, a volte non ti diremo come fare le cose ... ma sono sicuro che ti piace una bella sfida!
+
+È estremamente importante non fare di questi seminari un esercizio di copia e incolla del codice, ma piuttosto un'opportunità per apprendere e comprendere come analizzare i dati usando R.
+
+
+# Perché seminari autoguidati?
+
+Questa potrebbe sembrare una scelta strana. Sicuramente è meglio avere un esperto che ti dice cosa fare! Sì e no. Sì, è più facile quando qualcuno ti dice cosa fare passo dopo passo, ma è improbabile che ciò accada nella "vita reale".
+
+Questi seminari ti insegneranno come lavorare con R ma (si spera) ti permetteranno anche di diventare uno studente _indipendente_.
+Inoltre, sappiamo che studenti diversi hanno stili di apprendimento diversi. Dalla mia esperienza nel fare attività simili in passato, è raro che tutti procedano alla stessa velocità. Alcune persone risolveranno un esercizio molto velocemente ma poi si bloccheranno su un altro. 
+
+\newpage
+
+# Cosa succede se qualcosa non funziona / Non capisco qualcosa / Non sono sicuro se ho fatto le cose correttamente?
+
+Probabilmente tutte queste situazioni si applicheranno ad un certo punto ... e per loro abbiamo soluzioni diverse.
+
+1. Cerca di utilizzare [il manuale di R](https://cran.r-project.org/manuals.html) per risolvere qualsiasi problema!
+Se non sei sicuro di come usare un determinato comando, o cosa significa un determinato parametro ricorda che puoi semplicemente digitare nella console R:
+```{r eval=FALSE}
+help(command)
+```
+\hspace{2em} per vedere l'aiuto R per quel comando specifico.
+
+2. Puoi sempre contattarmi via email... 
+
+Infine, ricorda che il codice che ti verrà dato dovrebbe essere usato come guida; prova a sperimentare e cambiare le cose, e guarda cosa succede!
