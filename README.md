@@ -1,23 +1,27 @@
 # IBMS3-R-Workshops
 
-This repository contains a series of self-guided R workshops designed to be run during the Integrative Biomedical Sciences 3 (IBMS3) third year course, as part of the Biomedical Sciences Programme at the joint University of Edinburgh - University of Zhejiang Institute in Haining, China.
+Questo repository contiene una serie di seminari R autoguidati progettati 
+per essere eseguiti durante il corso triennale di Integrative Biomedical Sciences 3 (IBMS3),
+nell'ambito del programma di Scienze Biomediche presso l'Università di Edimburgo - University of Zhejiang Institute di Haining, Cina .
 
-The files are provided as R Markdown (.rmd) files, as well as the knitted PDF.
+I file sono forniti come file R Markdown (.rmd), nonché PDF.
 
-List of workshops
+Elenco delle lezioni:
 
-- Workshop 1: Plotting and manipulating data
-- Workshop 2: ANOVA and regression with interactions
-- Workshop 3: Mixed effects models
-- Workshop 4: Categorical data analysis
+- Lezione 1: Tracciare e manipolare i dati
+- Lezione 2: ANOVA e regressione con interazioni
+- Lezione 3: Modelli a effetti misti
+- Lezione 4: Analisi dei dati categorici
 
-In preparation
+In preparazione:
 
-- Workshop 5: Bootstrapping
-- Workshop 6: Classification
-- Workshop 7: Clustering
-- Workshop 8: PCA
+- Lezione 5: Bootstrapping
+- Lezione 6: Classificazione
+- Lezione 7: Clustering
+- Lezione 8: PCA
 
-All of the content is released under the Creative Commons Attribution-ShareAlike 4.0 International (CC-BY-SA 4.0) license, so feel free to modify the files, reuse them, and improve them (and let me know so I can use the improved versions as well!).
-
+Tutti i contenuti sono rilasciati sotto la licenza 
+Creative Commons Attribution-ShareAlike 4.0 International (CC-BY-SA 4.0), 
+quindi sentiti libero di modificare i file, riutilizzarli e migliorarli 
+(e fammi sapere in modo che anche io possa usare i miglioramenti!).
 <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a>
