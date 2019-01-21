@@ -315,7 +315,7 @@ I tuoi calcoli dovrebbero avere come risultato:
 | D       | 26.9     |
 | E       | NA       |
 
-I gruppi B ed E hanno dati mancanti, quindi `mean` restituisce` NA` come risultato.
+I gruppi B ed E hanno dati mancanti, quindi `mean` restituisce `NA` come risultato.
 
 Possiamo usare `complete.cases` per rimuovere quei punti dati permettendo così che si verifichino i calcoli corretti ^[Cosa stiamo facendo quando usiamo `complete.cases`?].
 
