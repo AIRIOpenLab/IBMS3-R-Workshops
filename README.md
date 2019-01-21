@@ -1,4 +1,4 @@
-# IBMS3-R-Workshops
+# Seminari autoguidati R
 
 Questo repository contiene una serie di seminari R autoguidati progettati 
 per essere eseguiti durante il corso triennale di Integrative Biomedical Sciences 3 (IBMS3),
