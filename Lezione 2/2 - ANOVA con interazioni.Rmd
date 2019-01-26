@@ -1,6 +1,6 @@
 ---
-title: "R workshop #2: multivariate regression analysis and factor interactions"
-author: "Nicola Roman�"
+title: "R lezione #2: analisi di regressione multivariata e interazioni fattoriali"
+author: "Nicola Romanò"
 #date: 05 October 2018
 output: 
   tufte::tufte_handout: default
@@ -34,149 +34,155 @@ knitr::knit_hooks$set(width=local({
 
 
 ***
-# Introduction
+# Introduzione
 
-Last year we have talked about linear models and their use to perform regression and analysis of variance (ANOVA). We only considered simple situations with one independent variable influencing the output variable (one-way ANOVA) or two factors (two-way ANOVA) that do not interact with each other. In the lectures we have now talked about interactions and how they change our interpretation of linear models. In this workshop we will have a look at how to deal with interactions in R.
+L'anno scorso abbiamo parlato di modelli lineari e del loro uso per eseguire la regressione e l'analisi della varianza (ANOVA).
+Abbiamo considerato solo situazioni semplici con una variabile indipendente che influenza la variabile di uscita (ANOVA a una via) o due fattori (ANOVA a due vie) che non interagiscono tra loro. 
+Nelle lezioni abbiamo parlato delle interazioni e di come cambiano la nostra interpretazione dei modelli lineari. 
+In questo seminario daremo un'occhiata a come affrontare le interazioni in R.
 
 
-# Learning objectives
-After completing this workshop you will be able to:
+# Obiettivi formativi
+Dopo aver completato questo seminario sarai in grado di:
 
-* Use linear models to perform multiple regression and analysis of variance with multiple factors
-* Correctly interpret the output of a linear model
-* Compare two models to choose the one that fits the data better
-* Correctly interpret the results of your analysis in the presence of interactions 
+* Utilizzare modelli lineari per eseguire regressione multipla e analisi della varianza con più fattori
+* Interpretare l'output di un modello lineare
+* Confrontare due modelli per scegliere quello che si adatta meglio ai dati
+* Interpretare i risultati della tua analisi in presenza di interazioni
 
-# Section 1 - A refresher on linear models
+# Sezione 1 - Un ripasso dei modelli lineari
 
-We start this workshop with a little refresher of linear models. **This also includes some more details about linear models that we only briefly touched upon last year**, so please go through this carefully. A linear model is a statistical model that relates the changes in a dependent variable ($Y$) with the changes in one or more independent variables ($X_1, X_2, ..., X_n$).
+Iniziamo questo seminario con un piccolo ripasso dei modelli lineari. 
+Un modello lineare è un modello statistico che mette in relazione le variazioni di una variabile dipendente ($Y$) con le variazioni di una o più variabili indipendenti ($X_1, X_2, ..., X_n$).
 
-The general equation for such model is:
+L'equazione generale per tale modello è:
 
 $Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_nX_n + \epsilon$
 
-Where:
+Dove:
 
-- $Y$ is our measured/outcome variables
-- $X_1, ..., X_n$ are the factors (or predictors) that influence $Y$. They are generally the other variables in your dataset, or transformations/combination of them ^[For instance, we may have collected the weight of the subjects in our study, but use log(weight) as a predictor for our model. Or we may have collected two different values and use their ratio as a model parameter]. 
-- $\beta_1, ... \beta_n$ are the regression coefficients, scaling factors for the predictors.
-- $\epsilon$ is the error, or residual. It represents the difference between what is explained by the model prediction, and what we have observed. It includes the effect of all the factors that we did not measure in our experimental setup, as well as measurement errors. We generally assume that it is normally distributed^[Note that although having normally distributed residuals makes things easier... you can still have a good, usable model when residuals are not normally distributed, especially if deviation from normality are small. Mostly, it boils down to critical observation of your data and experience. Also, talking with a statistician is always a good idea!].
+- $Y$ sono le nostre misure
+- $X_1, ..., X_n$ sono i fattori (o predittori) che influenzano $Y$. In genere sono le altre variabili nel set di dati, o le loro trasformazioni/combinazioni ^[Ad esempio, potremmo aver raccolto il peso dei soggetti nel nostro studio, ma usare _log(peso)_ come predittore per il nostro modello. Oppure potremmo aver raccolto due valori diversi e utilizzare il loro rapporto come parametro del modello].
+- $\beta_1, ... \beta_n$ sono i coefficienti di regressione, fattori di scala per i predittori.
+- $\epsilon$ è l'errore, o residuo. Rappresenta la differenza tra ciò che è spiegato dalla previsione del modello e ciò che abbiamo osservato. Include l'effetto di tutti i fattori che non abbiamo misurato nella nostra configurazione sperimentale, così come gli errori di misurazione. Generalmente assumiamo che sia distribuito normalmente ^[Si noti che sebbene avere residui normalmente distribuiti rende le cose più semplici ... si può ancora avere un modello valido e utilizzabile quando i residui non sono normalmente distribuiti, specialmente se la deviazione dalla normalità è piccola. Per lo più, si riduce all'osservazione critica dei dati e dell'esperienza. Inoltre, parlare con uno statistico è sempre una buona idea!].
 
-When we use R (or any other software!) to generate the model, what it does is estimating the coefficients $\beta$ in such a way to minimise the error^[In the case of `lm`, this is called a least-square estimation. In statistics books and publications you may see the estimated parameters indicated as $\hat\beta$ (read as "beta hat"). This is to indicate that this is the result of an estimation, that is an approximation of the true value of $\beta$ for the population, which remains unknown. We can obtain confidence intervals for these estimates by using `confint(model)`].
+Quando usiamo R (o qualsiasi altro software!) Per generare il modello, ciò che fa è stimare i coefficienti $\beta$ in modo tale da minimizzare l'errore ^[Nel caso di `lm`, questo è chiamato il metodo dei minimi quadrati. Nelle statistiche di libri e pubblicazioni è possibile visualizzare i parametri stimati indicati come $\hat\beta$ (altrimenti detti "beta hat"). Questo per indicare che è il risultato di una stima, ovvero un'approssimazione del vero valore di $\beta$ per la popolazione, che rimane sconosciuta. Possiamo ottenere intervalli di confidenza per queste stime usando `confint(model)`].
 
-In this formula each predictor acts independently from the others. In other words, if we have two predictors, $X_1$ and $X_2$, the effect of $X_1$ on $Y$ will always be the same, independently of the value of $X_2$. As we have seen in the lecture this is not always the case.
+In questa formula, ciascun predittore agisce indipendentemente dagli altri. In altre parole, se abbiamo due predittori, $X_1$ e $X_2$, l'effetto di $X_1$ su $Y$ sarà sempre lo stesso, indipendentemente dal valore di $X_2$. Ciò non è sempre il caso.
 
-##Simple regression
+## Regressione lineare semplice
 
-As a first example let's consider the dataset _pressure-workshop2.csv_.
-In this study the effect of a drug on reducing blood pressure (measured in mmHg) has been investigated on 150 patients of different age, weight (measured in kg), and sex.
+Come primo esempio consideriamo il set di dati `pressure-workshop2.csv`.
+In questo  studio è stato studiato l'effetto di un farmaco sulla riduzione della pressione arteriosa (misurata in mmHg) su 150 pazienti di età, peso (in kg) e sesso diversi.
 
 ```{r echo=FALSE, eval=TRUE}
-setwd("~/Teaching/IBMS3/Workshops/Workshop 2/")
+setwd("~/Lezione 2/")
 pressure <- read.csv("pressure-workshop2.csv")
 ```
 
-Start by familiarising with the data. How many men and women are there? What range of age and weight? Plot the various variables against each other and see if any particular patterns emerge ^[If you do not remember how to do that, see Workshop 1.].
+Inizia a familiarizzare con i dati. Quanti uomini e donne ci sono?
+Quale gamma di età e peso?
+Traccia le varie variabili l'una contro l'altra e vedi se emergono particolari modelli ^[Se non ricordi come farlo, vedi la Lezione 1.].
 
 
-Let's forget for a moment about the other variables and concentrate on the relation between Weight and Response; it looks like the largest effect is seen in heavier patients.
+Tralasciamo per un momento le altre variabili e concentriamoci sulla relazione tra peso e risposta; sembra che l'effetto maggiore si riscontri nei pazienti più pesanti.
 
 ```{r echo = FALSE, fig.height=3.5}
 par(mar = c(5, 4, 2, 2))
 plot(Response ~ Weight, pressure, pch = 20, las = 1, cex = 0.7, bty = "n",
-     xlab = "Weight (kg)", ylab = "Change in blood pressure (mmHg)", 
+     xlab = "Peso (kg)", ylab = "Variazione della pressione arteriosa (mmHg)", 
      cex.axis = 0.7, cex.lab = 0.75)
 ```
 
-We can use a linear model to test whether such a relation exists.
+Possiamo usare un modello lineare per verificare se esiste una tale relazione.
 
 
-As always, we start by stating our null hypothesis _________________________
+Come sempre, iniziamo affermando la nostra ipotesi nulla
 _________________________________________________________________________
 
-Do you remember how to perform a linear regression in R?
-Try it, if you don't remember see the following page!
+Ti ricordi come eseguire una regressione lineare in R?
+Prova, se non ricordi, leggi la pagina seguente!
 \newpage
 
 ```{r}
 model <- lm(Response ~ Weight, data = pressure)
 ```
 
-This generates the model
+Questo genera il modello
 
-$Response~=\beta_0+\beta_1*Weight+\epsilon$
+$Risposta~=\beta_0+\beta_1*Peso+\epsilon$
 
-What are the assumption of this model? Do you remember how to verify that they are satisfied? ^[Let's discuss this in the forum! I would say that for this case the assumptions are generally satisfied, what do you think?]
+Quali sono le ipotesi di questo modello? Ti ricordi come verificare che siano soddisfatte? ^[Direi che in questo caso le ipotesi sono generalmente soddisfatte, cosa ne pensi?]
 
-This is one of the simplest linear models we can generate, where the value of the outcome depends on a single parameter. This is called _simple regression_.
+Questo è uno dei più semplici modelli lineari che possiamo generare, in cui il valore del risultato dipende da un singolo parametro. Questa è chiamata _regressione lineare semplice_.
 
-Let's look at the output of the model
+Diamo un'occhiata all'output del modello
 
 ```{r, size = "small", width = 60}
 summary(model)
 ```
 
-The summary gives us a lot of information.
+Il riassunto ci dà molte informazioni.
 
-First of all, it tells us the parameters $\beta$ (coefficients) that have been estimated by the model.
+Prima di tutto, ci dice i parametri $\beta$ (coefficienti) che sono stati stimati dal modello.
+\vspace{1em}
+
+$\hat\beta_0 = 11.78$ e $\hat\beta_1 = -0.65$
+
+Quindi
+
+$\text{Risposta}~=11.78-0.65*\text{Peso}+\epsilon$
 
 \vspace{1em}
 
-$\hat\beta_0 = 11.78$ and $\hat\beta_1 = -0.65$
-
-Therefore
-
-$\text{Response}~=11.78-0.65*\text{Weight}+\epsilon$
-
-\vspace{1em}
-
-This means that for any increase of 1 Kg in weight there is a decrease of 0.65 mmHg in blood pressure following the intake of the drug.
-The effect of weight on the response to the drug is statistically significant ($F_{1,148}=205.8, p =2*10^{-16}$)^[R also reports a p-value for the intercept; this is the result of a one sample t-test comparing the intercept to 0. In other words, in this case the intercept is statistically different from 0. The intercept is the value corresponding to a change in blood pressure where all of the factors (in this case weight) are equal to zero. Since a weight of 0 is not biologically meaningful we can ignore this value in this instance].
+Ciò significa che per ogni aumento di 1 Kg di peso c'è una diminuzione di 0,65 mmHg nella pressione arteriosa dopo l'assunzione del farmaco.
+L'effetto del peso sulla risposta al farmaco è statisticamente significativo ($F_{1,148} = 205.8, p = 2 * 10^{- 16}$) ^[R riporta anche un valore p per l'intercetta; questo è il risultato di un test t di un campione che confronta l'intercetta a 0. In altre parole, in questo caso l'intercetta è statisticamente diversa da 0. L'intercetta è il valore corrispondente a un cambiamento nella pressione sanguigna in cui tutti i fattori (in questo caso il peso) sono uguali a zero. Poiché un peso di 0 non è biologicamente significativo, in questo caso possiamo ignorare questo valore].
 
 \newpage
 
-Another important value is the coefficient of determination ($R^2$). This is a measure of how good the model is, or how much of the variation in the data it explains. $R^2$ is not a great way to compare two different models, since it depends on the number of parameters; that is, if we add an extra descriptor to our model, $R^2$ will always increase. For this reason, R reports also an ``adjusted'' version of it.
-In this case $adj. R^2=0.5789$; this means that our model describes/explains ~57.9% of the variability in our data, which is OK but not great. It means that there are other factors that we have not considered accounting for >40% of the variability! ^[What do you think is the maximum value of $R^2$? Why?]
-So, what are these other factors?
+Un altro valore importante è il coefficiente di determinazione ($R^2$). Questo è una misura di quanto è buono il modello, o di quanto il modello spiega della variabilità dei dati. $R^2$ non è un buon modo per confrontare due diversi modelli, poiché dipende dal numero di parametri; cioè, se aggiungiamo un descrittore in più al nostro modello, $R^2$ aumenterà sempre. Per questo motivo, il software riporta anche una versione "corretta" (`adj.R`).
+In questo caso $adj.R^2 = 0.5789$; questo significa che il nostro modello descrive $\sim$ 57,9% della variabilità nei nostri dati, che è OK ma non eccezionale. Significa che ci sono altri fattori che non abbiamo considerato come responsabili di> 40% della variabilità! ^[Quale pensi sia il valore massimo di $R^2$? Perché?]
+Quindi, quali sono questi altri fattori?
 
-## Multiple regression
+## Regressione lineare multipla
 
-Our dataset contains two other descriptors: Age and Sex. It is very biologically plausible that these would affect blood pressure, so we should add them to our model^[Note that, although for the sake of simplicity we are adding these descriptors one at a time, in practice we would probably start from a complete model, including all of the descriptors that we measured. That is why we measured them, isn't it?]. To keep things simple, we will start with Age, and consider gender later.
+Il nostro set di dati contiene altri due descrittori: `Age` e `Sex`. È biologicamente plausibile che questi fattori possano influenzare la pressione sanguigna, quindi dovremmo aggiungerli al nostro modello ^[Si noti che, sebbene per semplicità stiamo aggiungendo questi descrittori uno alla volta, in pratica dovremmo probabilmente iniziare da un  completo, compresi tutti i descrittori che abbiamo misurato. Questo è il motivo per cui li abbiamo misurati, non è vero?]. Per semplificare le cose, inizieremo con l'età e considereremo il genere in un secondo momento.
 
-It is useful, at this point, to also plot the change in blood pressure against age.
+È utile, a questo punto, tracciare il cambiamento della pressione sanguigna contro l'età.
 
 ```{r echo = FALSE, fig.height=3.5}
 par(mar = c(5, 4, 1, 2))
 plot(Response ~ Age, pressure, pch = 20, las = 1, cex = 0.7, bty = "n",
-     xlab = "Age (years)", ylab = "Change in blood pressure (mmHg)", 
+     xlab = "Età (anni)", ylab = "Variazione della pressione arteriosa (mmHg)", 
      cex.axis = 0.7, cex.lab = 0.75)
 ```
 
-We see a possible relation in the response to the drug depending on age. Let's incorporate age in our model.
+Vediamo una possibile relazione nella risposta al farmaco a seconda dell'età. Incorporiamo l'età nel nostro modello.
 
 ```{r}
 model.2 <- lm(Response ~ Weight + Age, data = pressure)
 ```
 
-This will generate a model that considers the effect of weight and the effect of age, independently of each other ^[This means that the model will look at the effect of the weight of the individual on his/her response to the drug, independently of his/her age, and vice versa for age.]
+Questo genererà un modello che considera l'effetto del peso e l'effetto dell'età, indipendentemente l'uno dall'altro 
+^[Questo significa che il modello guarderà l'effetto del peso dell'individuo sulla sua risposta al farmaco, indipendentemente dalla sua età e viceversa.]
 
-What are the null hypotheses^[There is more than one!!!] that this model is testing?
+Quali sono le ipotesi nulle ^[Ce n'è più d'una !!!] che questo modello sta testando?
 
-Again, we want to check the assumptions of the model by using diagnostic plots.
+Di nuovo, vogliamo verificare le ipotesi del modello usando i grafici diagnostici.
 
 ```{r echo=F, fig.height=4}
 par(mar = c(2, 4, 2, 1), mfrow = c(2, 1), cex.axis = 0.9, cex.lab = 0.9, pch = 20)
 plot(model.2, 1:2, cex = 0.7)
 ```
 
-Since the diagnostic plots look good (equal variance throughout and normally distributed residuals), we can continue with this model.
+Dal momento che i grafici diagnostici sembrano buoni (varianza uniforme e residui distribuiti normalmente), possiamo continuare con questo modello.
 
 ```{r, size = "small", width = 60}
 summary(model.2)
 ```
 
-You can interpret the result of this model just like you did for the previous one. It tells us that there is a statistically significant effect of weight ($p<2*10^{-16}$) and of age ($p<2*10^{-16}$) on the response to the drug ($F_{2, 147} = 558.6$ ^[Note that the F statistic reported by `summary` refers to the whole model. If you wanted to know the F statistic for specific components of the model you could run `anova(model.2)`, which would give you F and DF for the various descriptors of your model.)])
-Note that now the model explains 88% of the variability!
+Puoi interpretare il risultato di questo modello proprio come hai fatto per il precedente. Ci dice che c'è un effetto statisticamente significativo del peso ($p <2 * 10^{-16}$) e dell'età ($p <2 * 10^{-16}$) sulla risposta al farmaco ($F_{2,147} = 558.6$ ^[Si noti che la statistica F riportata da `summary` si riferisce all'intero modello. Se si desidera conoscere la statistica F per componenti specifici del modello, è possibile eseguire `anova (model.2)`, che ti dà F e DF per i vari descrittori del tuo modello.)]).
+Nota che ora il modello spiega l'88% della variabilità!
 
 ##Qualitative predictors and dummy variables
 
@@ -310,7 +316,7 @@ drop1(model.3, test = "F")
 
 In the lectures you have learnt about interactions amongst factor in multiple regression. We will now see how to analyse interactions in R.
 
-We will now consider the data in `fox_workshop2.csv`. This dataset^[Data for this example is fictional, but quite loosely based on work by Tannerfeldt and Angerbj�rn (Oikos, 1998)] contains the litter size, as a measure of reproductive success, in two different population of Artic foxes, in relations to their age and location, as well as rodent availability^[Rodents are one source of food for Arctic foxes, but their number is fluctuating year-by-year in many regions] (which has been classified into low, medium, or high).
+We will now consider the data in `fox_workshop2.csv`. This dataset^[Data for this example is fictional, but quite loosely based on work by Tannerfeldt and Angerbjörn (Oikos, 1998)] contains the litter size, as a measure of reproductive success, in two different population of Artic foxes, in relations to their age and location, as well as rodent availability^[Rodents are one source of food for Arctic foxes, but their number is fluctuating year-by-year in many regions] (which has been classified into low, medium, or high).
 
 ![Sleepy arctic fox - Eric Kilby - CC BY-SA 2.0](arcticfox.jpg)
 
