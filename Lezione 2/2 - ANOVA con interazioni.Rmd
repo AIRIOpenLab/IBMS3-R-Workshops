@@ -184,36 +184,36 @@ summary(model.2)
 Puoi interpretare il risultato di questo modello proprio come hai fatto per il precedente. Ci dice che c'è un effetto statisticamente significativo del peso ($p <2 * 10^{-16}$) e dell'età ($p <2 * 10^{-16}$) sulla risposta al farmaco ($F_{2,147} = 558.6$ ^[Si noti che la statistica F riportata da `summary` si riferisce all'intero modello. Se si desidera conoscere la statistica F per componenti specifici del modello, è possibile eseguire `anova (model.2)`, che ti dà F e DF per i vari descrittori del tuo modello.)]).
 Nota che ora il modello spiega l'88% della variabilità!
 
-##Qualitative predictors and dummy variables
+## Predittori qualitativi e variabili fittizie
 
-Let's now consider gender and add it to our model. Plot the data, do you think gender affects the response to the drug?
+Consideriamo ora il sesso e aggiungiamolo al nostro modello. Traccia i dati, pensi che il sesso influenzi la risposta al farmaco?
 
-In this case, we are dealing with a discrete qualitative variable, with two levels, F and M. All that we said so far still applies, and `lm` is able to deal with this type of variables with no issue. However, the way we deal with these type of variables is slightly different.
+In questo caso, abbiamo a che fare con una variabile qualitativa discreta, con due livelli, F e M. Tutto ciò che abbiamo detto finora vale ancora e `lm` è in grado di gestire questo tipo di variabili senza alcun problema. Tuttavia, il modo in cui affrontiamo questo tipo di variabili è leggermente diverso.
 
 ```{r}
 model.3 <- lm(Response ~ Weight + Age + Sex, data = pressure)
 ```
 
-This is modelling the following:
+Questo è il modello:
 
-$\text{Response} = \beta_0 + \beta_1*\text{Weight} + \beta_2*\text{Height} + \beta_3 * D$
+$\text{Risposta} = \beta_0 + \beta_1*\text{Peso} + \beta_2*\text{Età} + \beta_3 * D$
 
-We introduce a new variable $D$, called a ``dummy variable'', that codes Sex in this way:
+Introduciamo una nuova variabile $D$, chiamata "variabile fittizia", che codifica Sesso in questo modo:
 
 \begin{equation}
 \nonumber
   D=
   \begin{cases}
-    1, & \text{if Sex}=M \\
-    0, & \text{otherwise}
+    1, & \text{se Sesso}=M \\
+    0, & \text{altrimenti}
   \end{cases}
 \end{equation}
 
-By default R assigns 0 to the first level of the variable (the _reference level_, in this case F), and 1 to the second^[Levels are ordered alphabetically; see Workshop 1 for how to change level ordering.]
+Di default R assegna 0 al primo livello della variabile (il _livello di riferimento_, in questo caso F) e 1 al secondo ^[I livelli sono ordinati alfabeticamente; vedere la Lezione 1 per come modificare l'ordinamento dei livelli.].
 
-Therefore, for observations at the reference level (so from female subjects), the third term $\beta_3*D$ will be 0; for male subjects that will be $\beta_3 * 1 = \beta_3$. Thus, $\beta_3$ represents the **difference between the response of a male and a female**, keeping all of the other factors constant.
+Pertanto, per le osservazioni al livello di riferimento (quindi soggetti di sesso femminile), il terzo termine $\beta_3 * D$ sarà 0; per soggetti di sesso maschile sarà $\beta_3 * 1 = \beta_3$. Quindi $\beta_3$ rappresenta la **differenza tra la risposta di un maschio e una femmina**, mantenendo tutti gli altri fattori costanti.
 
-Let's have a look at the summary of the model to better clarify this.
+Diamo un'occhiata al sommario del modello per chiarirlo meglio.
 
 \newpage
 
@@ -221,36 +221,36 @@ Let's have a look at the summary of the model to better clarify this.
 summary(model.3)
 ```
 
-The output is not much different from what we had before. Does Sex have a statistically significant effect on the response? What percent of variance is explained by this model?^[Note how, although minimally, $R^2$ has increased, since we have added an extra parameter, however $\text{adj.}~R^2$ has decreased!]
+L'output non è molto diverso da quello che avevamo prima. Ha il sesso un effetto statisticamente significativo sulla risposta? Quale percentuale della varianza viene spiegata da questo modello? ^[Si noti come $R^2$ sia aumentato, sebbene di poco, poiché abbiamo aggiunto un parametro extra; invece $R_{adj}^2 $ è diminuito!].
 
-Consider the estimates
+Considera le stime
 
 $\beta_1 = -0.66;~\beta_2 = 0.42;~\beta_3 = 0.41$
 
-These mean that:
+Ciò significa che:
 
-- For every increase in 1 kg of weight, the response decreases of 0.66 mmHg (keeping age and sex the same)
-- For every increase in 1 year of age, the response increases of 0.42 mmHg (keeping weight and sex the same)
-- If the patient is male the response increases of 0.41 mmHg
+- Per ogni aumento di 1 kg di peso, la risposta diminuisce di 0,66 mmHg (mantenendo uguale età e sesso)
+- Per ogni aumento di 1 anno di età, la risposta aumenta di 0,42 mmHg (mantenendo il peso e il sesso uguali)
+- Se il paziente è di sesso maschile, la risposta aumenta di 0,41 mmHg
 
-So, what would you predict the response of a 50 year old male weighing 82 kg will be? Write your response on the forum^[Remember to include the intercept in your calculations as well!].
+Quindi, quale prevedi che sia la risposta di un uomo di 50 anni che pesa 82 kg?
 
-## Dummy variables for multiple levels
+## Variabili fittizie per più livelli
 
-You may have realised at this point, that dummy variables are what R uses to code for groups or other discrete factors when doing an ANOVA! 
+Potresti aver capito a questo punto, che le variabili fittizie sono ciò che R usa per codificare i gruppi o altri fattori discreti quando eseguiamo un ANOVA!
 
-In some cases, however, you will have more than two levels; the reasoning is the same, however multiple dummy variables will be used to define the different levels.
+In alcuni casi, tuttavia, avrai più di due livelli; il ragionamento è lo stesso, tuttavia saranno usate più variabili fittizie per definire i diversi livelli.
 
-For example, suppose you measured the levels of LH in three different species of fish: mackerel, salmon, and trout.
+Ad esempio, supponiamo di aver misurato i livelli dell'ormone luteinizzante (_LH_) in tre diverse specie di pesci: sgombro, salmone e tonno.
 
-You can code the species variable with two dummy variables (so, number of levels - 1) $D_1$ and $D_2$ such as:
+Puoi codificare la variabile _Specie_ con due (numero di livelli - 1) variabili fittizie $D_1$ e $D_2$ così:
 
 \begin{equation}
 \nonumber
   D_1=
   \begin{cases}
-    1, & \text{if Species}=\text{"Salmon"} \\
-    0, & \text{otherwise}
+    1, & \text{se Specie}=\text{"Salmone"} \\
+    0, & \text{altrimenti}
   \end{cases}
 \end{equation}
 
@@ -258,38 +258,38 @@ You can code the species variable with two dummy variables (so, number of levels
 \nonumber
   D_2=
   \begin{cases}
-    1, & \text{if Species}=\text{"Tuna"} \\
-    0, & \text{otherwise}
+    1, & \text{se Specie}=\text{"Tonno"} \\
+    0, & \text{altrimenti}
   \end{cases}
 \end{equation}
 
-Therefore:
+Quindi:
 
-| Species  | $D_1$ | $D_2$ |
+| Specie   | $D_1$ | $D_2$ |
 |----------|-------|-------|
-| Mackerel | 0     | 0     |
-| Salmon   | 1     | 0     |
-| Tuna     | 0     | 1     |
+| Sgombro  | 0     | 0     |
+| Salmone  | 1     | 0     |
+| Tonno    | 0     | 1     |
 
-Our model may be something like:
+Il nostro modello potrebbe essere qualcosa del tipo:
 
 $\text{LH} = \beta_0 + \beta_1*D_1 + \beta_2*D_2 + \epsilon$ 
 
-where $\beta1$ represents the difference between LH levels in salmons and mackerels, and $\beta2$ the difference between LH levels in tuna and mackerel.
+dove $\beta1$ rappresenta la differenza tra i livelli di LH nel salmone e nello sgombro e $\beta2$ la differenza tra i livelli di LH nel tonno e nello sgombro.
 
-#Section 2 - Choosing a model
+#Sezione 2: scelta di un modello
 
-Going back to our initial example, we have fitted three models:
+Tornando al nostro esempio iniziale, abbiamo tre modelli:
 
-1. $\text{Response}~=\beta_0+\beta_1*\text{Weight}+\epsilon$
-2. $\text{Response}~=\beta_0+\beta_1*\text{Weight}+\beta_2*\text{Age}+\epsilon$
-3. $\text{Response}~=\beta_0+\beta_1*\text{Weight}+\beta_2*\text{Age}+\beta_3*D_{male}+\epsilon$
+1. $\text{Risposta}~=\beta_0+\beta_1*\text{Peso}+\epsilon$
+2. $\text{Risposta}~=\beta_0+\beta_1*\text{Peso}+\beta_2*\text{Età}+\epsilon$
+3. $\text{Risposta}~=\beta_0+\beta_1*\text{Peso}+\beta_2*\text{Età}+\beta_3*D_{maschio}+\epsilon$
 
-We could argue that #2 is better than #1, as it explains a much larger percentage of the variance (88% vs 58%), but what about #3? 
+Potremmo obiettare che il modello #2 è meglio del modello #1, in quanto spiega una percentuale molto più grande della varianza (88% vs 58%), ma che dire del modello #3?
 
-Is it correct to say that since Sex does not have a statistically significant effect on the response, and since the value of adjusted $R^2$ is lower (albeit by a very small amount) we should drop Sex from the model, and only consider Age and Weight as predictors?
-One way of deciding this is to use the `anova` function to compare the two models.
-This tests the null hypothesis that the most complex model does not fit the data better than the simpler one^[To be more precise, what this actually does is test whether the extra estimated coefficients in the more complex model are not different from 0. Note that you can use this function only if all of the parameters of the smallest model are also present in the more complex model.]. 
+È corretto dire che: poiché il Sesso non ha un effetto statisticamente significativo sulla risposta, e dato che il valore di $R_{adj}^2$ è inferiore (anche se in minima parte), dovremmo eliminare Sesso dal modello, e solo considerare l'età e il peso come predittori?
+Un modo per decidere è usare la funzione `anova` per confrontare i due modelli.
+Questo verifica l'ipotesi nulla che il modello più complesso non si adatti ai dati meglio di quello più semplice ^[Per essere più precisi, ciò che effettivamente fa è verificare se i coefficienti extra stimati nel modello più complesso non sono diversi da 0. Nota che puoi usare questa funzione solo se tutti i parametri del modello più semplice sono presenti anche nel modello più complesso.].
 
 \newpage
 
@@ -297,30 +297,31 @@ This tests the null hypothesis that the most complex model does not fit the data
 anova(model, model.2)
 ```
 
-As expected, the p-value is very low, indicating that the second, more complex, model fits the data better than the first one, and should be preferred to it. See also how much the residual sum of squares (RSS) has decreased, indicating that the model is much closer to the real data (hence the residuals (and their squared sum) are smaller).
+Come previsto, il valore di $p$ è molto basso, il che indica che il secondo modello, più complesso, si adatta meglio ai dati rispetto al primo e dovrebbe essere preferito ad esso. Vedi anche quanto è diminuita la somma residua dei quadrati (RSS), indicando che il modello è molto più vicino ai dati reali (quindi i residui, e la loro somma quadratica, sono minori).
 
-Conversely 
+al contrario
 
 ```{r size = "small", width = 60}
 anova(model.2, model.3)
 ```
-The p-value is 0.64, indicating that we cannot refute the null hypothesis, meaning that our third model (with Age, Weight, and Sex) is not better than the simpler model.
 
-R also provides a convenient function, called `drop1`, that removes one predictor at a time from a larger model. You can see that this confirms what we have seen above.^[Please, note that these are only very general guidelines. The choice of what to include in your model is not an easy one and different school of thoughts exist on whether it is better to always have a simpler model or a more complete one and often the answer is not straightforward. **The important thing is that any choice you make is based on a solid motivation.** Don't just stop at the p-value... think of what question you are asking and what your model tells you.]
+Il valore di $p$ è 0.64, a indicare che non possiamo confutare l'ipotesi nulla, il che significa che il nostro terzo modello (con età, peso e sesso) non è migliore del modello più semplice.
+
+R fornisce anche una comoda funzione, chiamata `drop1`, che rimuove un predittore alla volta da un modello più grande. Potete vedere che conferma ciò che abbiamo visto sopra. ^[Si prega di notare che queste sono solo linee guida molto generali. La scelta di cosa includere nel modello non è facile ed esistono pareri contrastanti sul se sia meglio avere sempre un modello più semplice o più completo e spesso la risposta non è semplice. **La cosa importante è che ogni scelta sia basata su una solida motivazione.** Non fermarti solo al valore di $p$ ... pensa quale domanda ti stai chiedendo e cosa ti dice il tuo modello.]
 
 ```{r size = "small", width = 60}
 drop1(model.3, test = "F")
 ```
 
-#Section 3 - Interactions between factors
+# Sezione 3 - Interazioni tra fattori
 
-In the lectures you have learnt about interactions amongst factor in multiple regression. We will now see how to analyse interactions in R.
+Nelle lezioni hai imparato a conoscere le interazioni tra fattori nella regressione multipla. Vedremo ora come analizzare le interazioni in R.
 
-We will now consider the data in `fox_workshop2.csv`. This dataset^[Data for this example is fictional, but quite loosely based on work by Tannerfeldt and Angerbjörn (Oikos, 1998)] contains the litter size, as a measure of reproductive success, in two different population of Artic foxes, in relations to their age and location, as well as rodent availability^[Rodents are one source of food for Arctic foxes, but their number is fluctuating year-by-year in many regions] (which has been classified into low, medium, or high).
+Considereremo ora i dati in `fox_workshop2.csv`. Questo set di dati ^[I dati per questo esempio non sono reali, ma basati sul lavoro di Tannerfeldt e Angerbjörn (Oikos, 1998)] contiene la dimensione della cucciolata, come misura del successo riproduttivo, in due diverse popolazioni di volpi artiche, in relazione alla loro età e posizione, così come la disponibilità dei roditori ^[I roditori sono una fonte di cibo per le volpi artiche, ma il loro numero varia di anno in anno in molte regioni] (che è stato classificata come bassa, media o alta).
 
 ![Sleepy arctic fox - Eric Kilby - CC BY-SA 2.0](arcticfox.jpg)
 
-As usual, we read the data and begin to explore it
+Come al solito, leggiamo i dati e iniziamo a esplorarli
 
 ```{r size = "small", width = 80}
 foxes <- read.csv("fox-workshop2.csv")
@@ -328,37 +329,38 @@ foxes <- read.csv("fox-workshop2.csv")
 summary(foxes)
 ```
 
-You may have noticed that the levels of the RodentAvail factor are in a slightly unusual order^[Alphabetical!]. We can reorder it so Low is used as reference.
+Potresti aver notato che i livelli del fattore `RodentAvail` sono in un ordine un po' insolito ^[Alfabetico!]. Possiamo riordinarlo in modo che `Low` sia usato come riferimento.
 
 ```{r}
 foxes$RodentAvail <- factor(foxes$RodentAvail, 
                             levels = c("Low", "Medium", "High"))
 ```
 
-We can then plot some of the relationships between variables^[Can you reproduce these plots?].
+Possiamo quindi tracciare alcune delle relazioni tra le variabili ^[Sei in grado di riprodurre questi grafici?].
+
 ```{r echo = F, fig.width=7, fig.height=2.5}
 oldpar <- par(mfrow = c(1, 3), mar = c(4, 4, 1, 2), 
               las = 1, bty = "n", cex.lab = 1.3, cex.axis = 1.3)
 plot(LitterSize ~ Age, data = foxes, pch = 20, 
-     ylim = c(0, 20), ylab = "Litter size")
+     ylim = c(0, 20), ylab = "Cucciolata", xlab="Età")
 boxplot(LitterSize ~ RodentAvail, data = foxes, 
-        ylim = c(0, 20), ylab = "Litter Size", 
-        xlab = "Rodent availability", frame = F)
+        ylim = c(0, 20), ylab = "Cucciolata", 
+        xlab = "Disponibilità Roditori", frame = F, names=c("Bassa", "Media", "Alta"))
 stripchart(LitterSize ~ RodentAvail, data = foxes,
            vertical = TRUE, pch = 20, cex = 0.8,
            add = TRUE, method = "jitter")
 boxplot(LitterSize ~ Location, data = foxes, 
-        ylim = c(0, 20), ylab = "Litter size")
+        ylim = c(0, 20), ylab = "Cucciolata", xlab="Posizione", names=c("Costa", "Entroterra"))
 stripchart(LitterSize ~ Location, data = foxes,
            vertical = TRUE, pch = 20, cex = 0.8,
            add = TRUE, method = "jitter")
 par(oldpar)
 ```
 
-From a first inspection, it seems that reproductive success is somehow correlated to all of the other variables.
-We can use a linear model to study these relationships^[Litter size is a count, therefore it is bounded to 0; we will learn later in the course that a linear model is not the best way to analyse these type of bounded data, but for the moment we can ignore this problem.].
+Da una prima ispezione, sembra che il successo riproduttivo sia in qualche modo correlato a tutte le altre variabili.
+Possiamo usare un modello lineare per studiare queste relazioni ^[La dimensione della cucciolata è un conteggio, quindi il limite inferiore è 0; impareremo più avanti nel corso che un modello lineare non è il modo migliore per analizzare questo tipo di dati limitati, ma per il momento possiamo ignorare questo problema.].
 
-Just we did before, we can create a model using `lm`:
+Proprio come abbiamo fatto prima, possiamo creare un modello usando `lm`:
 
 ```{r}
 model <- lm(LitterSize ~ Age + Location + RodentAvail, data = foxes)
@@ -367,12 +369,12 @@ model <- lm(LitterSize ~ Age + Location + RodentAvail, data = foxes)
 summary(model)
 ```
 
-I will leave the point-by-point interpretation of the model's summary to you^[Look at the intercept, what does a negative value mean there? Do you see any problems with that?]. 
+Lascerò a te l'interpretazione punto per punto del sommario del modello ^[Guarda l'intercetta, che cosa significa un valore negativo? Vedi qualche problema?].
 
-There is an important  question now: is this the best model to describe our data? The adjusted $R^2$ value is 0.64, meaning that the model only explains about 64% of the data's variance. 
+Ora una domanda importante: è questo il miglior modello per descrivere i nostri dati? Il valore $R_{adj}^2$ è 0.64, il che significa che il modello spiega solo il 64% della varianza dei dati.
 
-Can we improve the model? The answer partly depends on the question we want to address. For example, one interesting question that this model cannot currently answer is "Does rodent availability affect the litter size of both population of foxes in the same way?". This is a more specific and potentially more interesting question to ask, but slightly more complex to answer.
-We can start by going back to our plots. Let's consider this
+Possiamo migliorare il modello? La risposta dipende in parte dalla domanda che vogliamo affrontare. Ad esempio, una domanda interessante che questo modello non può attualmente rispondere è "La disponibilità dei roditori influenza le dimensioni della cucciolata di entrambe le popolazioni di volpi nello stesso modo?". Questa è una domanda più specifica e potenzialmente più interessante da chiedere, ma leggermente più complessa da rispondere.
+Possiamo iniziare tornando ai nostri grafici. Consideriamo questo
 
 ```{r echo = F}
 par(cex.lab = 0.7, cex.axis = 0.7, las = 1, bty = "n", 
@@ -380,20 +382,21 @@ par(cex.lab = 0.7, cex.axis = 0.7, las = 1, bty = "n",
 ```
 ```{r fig.height=2.3, fig.align='center', echo = F}
 boxplot(LitterSize ~ RodentAvail * Location, data = foxes, 
-        pch = 20, cex = 0.8, ylab = "Litter size",
-        las = 1, cex.axis = 0.6, xlab = "Rodent availability\nLocation",
-        names = c("Low\nCoastal", "Med\nCoastal", "High\nCoastal",
-                  "Low\nInland", "Med\nInland", "High\nInland"))
+        pch = 20, cex = 0.8, ylab = "Cucciolata",
+        las = 1, cex.axis = 0.6, xlab = "Disponibilità Roditori\nPosizione",
+        names = c("Bassa\nCosta", "Media\nCosta", "Alta\nCosta",
+                  "Bassa\nEntr.", "Media\nEntr.", "Alta\nEntr."))
 ```
-Now, that is interesting! It looks like the two populations are not equal when considering the effect of rodent availability on reproductive success! In other words, there is an interaction between location and rodent availability in deremining litter size. This is not only interesting because it gives us the opportunity to look at how to analyse interactions in R... but also because it brings about other questions such as "why there is this difference?"^[For example, one explanation could be that coastal areas offer larger provisions of birds, that nest on the cliffs on the coast. These birds can be used by foxes as an alternative food source. Therefore foxes living on the coast have on average smaller litters every year, while foxes living inland have large litters in years when there is a lot of food available. Could you design an experiment to test this hypothesis?].
 
-We can modify our model to take this into account
+Questo è molto interessante! Sembra che le due popolazioni non siano uguali quando considerano l'effetto della disponibilità di roditori sul successo riproduttivo! In altre parole, esiste un'interazione tra la posizione e la disponibilità dei roditori nel determinare le dimensioni della cucciolata. Questo non solo è interessante perché ci dà l'opportunità di imparare come analizzare le interazioni in R ... ma anche perché porta altre domande come "perché c'è questa differenza?" ^[Ad esempio, una spiegazione potrebbe essere che le aree costiere offrono maggiori quantità di uccelli, che nidificano sulle scogliere della costa. Questi volatili possono essere usati dalle volpi come fonte di cibo alternativa. Quindi le volpi che vivono sulla costa hanno in media una cucciolata più piccola ogni anno, mentre le volpi che vivono nell'entroterra hanno grandi cucciolate negli anni quando c'è molto cibo a disposizione. Potresti progettare un esperimento per verificare questa ipotesi?].
+
+Possiamo modificare il nostro modello per tenerne conto
 
 ```{r}
 model.2 <- lm(LitterSize ~ Age + Location + RodentAvail + RodentAvail:Location, data = foxes)
 ```
 
-The `RodantAvail:Location` notation is used to indicate the interaction between the two factors. An alternative, and completely equivalent, way of indicating interactions is by using the `*` sign.
+La notazione `RodentAvail: Location` viene utilizzata per indicare l'interazione tra i due fattori. Un modo alternativo e completamente equivalente di indicare le interazioni è usando il segno `*`.
 
 ```{r}
 model.2 <- lm(LitterSize ~ Age + Location * RodentAvail, data = foxes)
@@ -404,42 +407,45 @@ model.2 <- lm(LitterSize ~ Age + Location * RodentAvail, data = foxes)
 summary(model.2)
 ```
 
-This is slightly more complex from what we have seen before, however it can be interpreted in a very similar manner.
-We see that the model now explains 80% of the variability in our data, an improvement compared to the previous model^[You can also compare this model with the previous one using the `anova` function]!
-The model also tells us that there is a significant effect of age on litter size. $\hat\beta_{Age}$ tells us that for each increase of 1 year in age there is an increase in 2.4 in litter size^[We need to be very careful when interpreting these coefficients. The model does not tell us why older animals have bigger litters. It may be directly because of age, or because older animals have previously had litters, and this has an effect on litter size!]. It also tells us that there are significant interactions.
+Questo modello è leggermente più complesso di quello precedente, tuttavia può essere interpretato in modo molto simile.
+Vediamo che il modello ora spiega l'80% della variabilità nei nostri dati, un miglioramento rispetto al modello precedente ^[Puoi anche confrontare questo modello con quello precedente usando la funzione `anova`]!
+Il modello ci dice anche che c'è un effetto significativo dell'età sulle dimensioni della cucciolata. $\hat\beta_{Age}$ ci dice che per ogni aumento di 1 anno di età c'è un aumento di 2.4 nelle dimensioni della cucciolata ^[Dobbiamo fare molta attenzione quando interpretiamo questi coefficienti. Il modello non ci dice perché gli animali più vecchi hanno cucciolate più grandi. Può essere direttamente a causa dell'età, o perché gli animali più vecchi hanno già avuto cucciolate, e questo ha un effetto sulle dimensioni della figliata!]. Ci dice anche che ci sono interazioni significative.
 
-We can visualise these interactions by using an _interaction plot_, such as that provided by the `emmip` function in the package `emmeans`^[If you do not have the package emmeans installed, you can do so using `install.packages("emmeans")`. R also provides another function, called `interaction.plot`, that can produce the same graph)].
+Possiamo visualizzare queste interazioni usando un _interaction plot_, come quello fornito dalla funzione `emmip` nel pacchetto` emmeans` ^[Se non hai installato il pacchetto `emmeans`, puoi farlo usando `install.packages("emmeans")`. R fornisce anche un'altra funzione, chiamata `interaction.plot`, che può produrre lo stesso grafico)].
 
 ```{r}
 par(mar = c(4, 4, 1, 4), cex = 0.5, cex.lab = 1, cex.axis = 1)
 ```
 ```{r warning=FALSE, message=FALSE}
-library(emmeans) # You need to have emmeans installed for this!
+library(emmeans) # Devi avere installato emmeans!
 emmip(model.2, RodentAvail ~ Location)
 emmip(model.2, Location ~ RodentAvail)
 ```
 
-These graphs show the _estimated marginal means_, that is the means estimated by our model for each level of the factors we are considering.
+Questi grafici mostrano le  _medie marginali stimate_, ovvero le medie stimate dal nostro modello per ogni livello dei fattori che stiamo considerando.
 
-Both graphs show the same information; since the lines are not running parallel to each other we can say that there is an interaction between the two factors. Rodent availability is influencing the inland population more than it is the coastal population.
+Entrambi i grafici mostrano la stessa informazione; poiché le linee non sono parallele tra loro, possiamo dire che esiste un'interazione tra i due fattori.
+La disponibilità di roditori influenza la popolazione nell'entroterra più di quanto influenzi la popolazione costiera.
 
-And what should we make of the estimates for Location and RodentAvail^[That is $\hat\beta_2 = 2.46$ and $\hat\beta_3=-2.65$]? Because we have a significant interaction, these coefficients become slightly less useful. $\hat\beta_2$ is the mean difference in litter size between foxes living inland and those living on the coast, **independently of rodent availability**^[Can you interpret $\hat\beta_3$? Write your explanation in the forum]. However, since rodent availability affects this difference... we would generally ignore these two coefficient when interpreting our model. More formally, in the presence of interactions, we generally ignore the main effects (so the independent effects of each of the two interacting factors across the whole sample).
+E cosa dovremmo fare delle stime per la posizione e la disponibilità dei roditori ^[Cioé $\hat\beta_2 = 2.46$ e $\hat\beta_3 = -2.65$]? Poiché abbiamo un'interazione significativa, questi coefficienti diventano leggermente meno utili. $\hat\beta_2$ è la differenza media tra le dimensioni della cucciolata tra le volpi che vivono nell'entroterra e quelle che vivono sulla costa, **indipendentemente dalla disponibilità dei roditori** ^[Come puoi interpretare $\hat\beta_3$?]. Tuttavia, poiché la disponibilità dei roditori influenza questa differenza ... ignoreremmo questi due coefficienti quando interpretiamo il nostro modello. Più formalmente, in presenza di interazioni, generalmente ignoriamo gli effetti principali (quindi gli effetti indipendenti di ciascuno dei due fattori che interagiscono nell'intero campione).
 
-Finally, let's say that we want to know whether there is a statistical differece between the coastal and inland population, at the different level of RodentAvail. We can use the `emmeans` and `pairs` functions to do so. These function can perform pairwise comparison (just like the Tukey test did), also taking into account interactions. Rather than comparing all of the possible levels, we can specify specific differences (also called contrasts) that we are interested in; this will avoid, for instance, comparisons such as Inland/High vs Coastal/Low, which do not give us any particular biological information.^[Still, in case we wanted to look at all possible comparisons... we could use `emmeans(model.2, pairwise ~ Location * RodentAvail)`. This will return all possible comparisons, without having to call pairs].
+Infine, diciamo che vogliamo sapere se esiste una differenza statistica tra la popolazione costiera e quella dell'entroterra, ai diversi livelli di disponibilità dei roditori. Possiamo usare le funzioni `emmeans` e `pair` per farlo.
+Queste funzioni possono eseguire il confronto a coppie (proprio come il test di Tukey), tenendo anche conto delle interazioni. Piuttosto che confrontare tutti i possibili livelli, possiamo specificare differenze specifiche (chiamate anche contrasti) a cui siamo interessati; questo eviterà confronti, come ad esempio Entroterra/Alta Disponibilità verso Costa/Bassa Disponibilità, che non ci forniscono particolari informazioni biologiche ^[Ancora, nel caso volessimo guardare a tutti i possibili confronti ... potremmo usare `emmeans(model.2, pairwise ~ Location * RodentAvail)`. Ciò restituirà tutti i possibili confronti, senza dover usare `pairs`].
 
 ```{r size = "small", width = 80}
 marginals <- emmeans(model.2, ~ Location * RodentAvail)
 pairs(marginals, by = "RodentAvail")
 ```
 
-In the calls to pairs we specify that we want to compare Location at different levels of RodentAvail. The output gives us the estimate of the difference (e.g.: for low rodent availability, the coastal foxes have on average 2.6 pups more than inland foxes), and the standard error associated with this estimate^[Remember, these estimates are based on the values of the $\hat\beta$ coefficients calculated for our model, but these are only estimations of the true population parameters]. We also get a p-value for each of the contrasts. Remember, although the p-value tells us that the two conditions are different, it is probably more interesting to look at some measure of effect size (such as the estimate), which tells us about the biological significance of the result. Plot the data, look at the number and think! Would a difference in 0.01 pups/litter with a p-value of 0.02 be of any biological significance? Or, would you immediately dismiss a difference in 6 pups/litter because it was associated with a p-value of 0.09^[Think of what that 0.09 means...]?
+Nelle chiamata a `pairs`, si specifica che vogliamo confrontare la posizione a diversi livelli di disponibilità dei roditori. L'output ci dà la stima della differenza (ad esempio: per basse disponibilità di roditori, le volpi costiere hanno in media 2.6 cuccioli in più rispetto alle volpi interne) e l'errore standard associato a questa stima ^[Ricorda che queste stime si basano sui valori dei coefficienti $\hat\beta$ calcolati per il nostro modello, ma queste sono solo stime dei parametri reali della popolazione]. Abbiamo anche un valore $p$ per ciascuno dei contrasti. Ricorda, anche se il valore $p$ ci dice che le due condizioni sono diverse, probabilmente è più interessante osservare una certa misura della dimensione dell'effetto (come la stima), che può spiegare il significato biologico del risultato. Traccia i dati, guarda il numero e pensa! Una differenza di 0.01 cuccioli con un valore $p$ di 0.02 sarebbe interessante dal punto di vista biologico? Oppure, elimineresti immediatamente una differenza di 6 cuccioli per cucciolata perché associata a un valore $p$ di 0.09 ^[Pensa a cosa significa 0.09 ...]?
 
-Finally, can you compare, for each location, the litter size at different level of rodent availability? 
+Infine, puoi confrontare, per ogni posizione, le dimensioni della cucciolata a diversi livelli di disponibilità dei roditori?
+
 \newpage
 
-## A final exercise
+## Un ultimo esercizio
 
-Finally, to consolidate what explained so far, consider the dataset `nerveConduction-workshop2.csv`. This contains measures of nerve conduction velocity in myelinated and unmyelinated fibres, in relation to their diameter.
+Infine, per consolidare ciò che è stato spiegato fino ad ora, considera il set di dati `nerveConduction-workshop2.csv`. Questo set contiene misure della velocità di conduzione nervosa in fibre mielinizzate e non mielinizzate, in relazione al loro diametro.
 
-Explore the dataset, and visually determine relationships between the various variables. 
-Fit a linear model to explore the effect of Sex, Myelination and Diameter on conduction Velocity, exploring different interactions, and define what the various parameters estimated by your model mean. Which model best describes the data? What conclusions can you draw? 
+Esplora il set di dati e determina visivamente le relazioni tra le varie variabili.
+Adatta un modello lineare per esplorare l'effetto di Sesso, Mielinizzazione e Diametro sulla Velocità di Conduzione, esplorando diverse interazioni e definisci quali sono i vari parametri stimati dal tuo modello. Quale modello descrive meglio i dati? Quali conclusioni puoi trarre?
