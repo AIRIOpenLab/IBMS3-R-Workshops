@@ -1,6 +1,6 @@
 ---
-title: "R workshop #3: Mixed-effects models"
-author: "Nicola Roman�"
+title: "R workshop #3: Modelli a effetti misti"
+author: "Nicola Romanò"
 #date: 05 October 2018
 output: 
   tufte::tufte_handout: default
@@ -32,46 +32,47 @@ knitr::knit_hooks$set(width=local({
 
 ```
 
-# Introduction
+# Introduzione
   
-As we have seen in the lectures, both repeated measures and nested designs pose some challenges to data analysis.
-In particular, these types of design are problematic as they contain correlated observations.
+Come abbiamo visto nelle lezioni, sia le misure ripetute che i design annidati pongono alcune sfide all'analisi dei dati.
+In particolare, questi tipi di design sono problematici in quanto contengono osservazioni correlate.
 
-For example, in the case of a repeated measure design, where we measure a certain parameter in the same subject at different times, each of the measurements is likely to be dependent (thus correlated to some degree) on the previous value.
+Ad esempio, nel caso di un design di misure ripetute, in cui misuriamo un determinato parametro nello stesso soggetto in momenti diversi, è probabile che ciascuna delle misurazioni dipenda (ovverio sia correlata) dal valore precedente.
 
-One of the best ways of dealing with these data is to use mixed effects models, an extension of the linear model that allows to account for random effects into the model.
+Uno dei modi migliori per gestire questi dati è l'uso di modelli a effetti misti, un'estensione del modello lineare che consente di tenere conto di effetti casuali nel modello.
 
-For the context of this workshop we will need to use the `nlme` R package^[The other commonly used package is `lme4`, with the `lmer` function. The syntax is slightly different but similar reasoning apply]. As usual, this can be installed using the following command:
+Per il contesto di questo workshop avremo bisogno di usare il pacchetto `nlme` ^[L'altro pacchetto comunemente usato è `lme4`, con la funzione `lmer`. La sintassi è leggermente diversa ma si applica un ragionamento simile]. Come al solito, questo pacchetto può essere installato usando il seguente comando:
 
 ```{r eval = FALSE}
 install.packages("nlme")
 ```
 
-Installation needs to be performed only once. The package can then be used after loading using:
+L'installazione deve essere eseguita solo una volta. Il pacchetto può quindi essere utilizzato dopo il caricamento utilizzando:
 
 ```{r}
 library(nlme)
 ```
 
-Note: mixed-effects models are quite a complex tool to use. The aim of this workshop is to introduce you to these models, and give you an idea of how to use them for some basic analysis. This is far from being a comprehensive tool^[If you are really interested to expand your knowledge in this area, a very good book is "Mixed Effects Models in S and S-PLUS" by Pinheiro and Bates (this uses S, which is the language R derives from; the S code can be run in R with no major issue)], and analysis of more complex designs may be not so trivial!
+Nota: i modelli a effetti misti sono uno strumento piuttosto complesso da usare. Lo scopo di questo workshop è di presentarti questi modelli e darti un'idea di come usarli per alcune analisi di base. Questa è ben lungi dall'essere una presentazione completa ^[Se sei veramente interessato ad ampliare le tue conoscenze in questo settore, un ottimo libro è "Mixed Effects Models in S and S-PLUS" di Pinheiro e Bates (questo libro usa S, che è il linguaggio da cui è derivato R; il codice S può essere eseguito in R senza troppi problemi)], e l'analisi di progetti più complessi può non essere così banale!
 
-# Learning objectives
-After completing this workshop you will be able to:
+# Obiettivi formativi
 
-* Creat a mixed effect model to explore simple repeated measure or nested designs.
-* Interpret the output of a mixed effect model
+Dopo aver completato questo workshop sarai in grado di:
 
-# Repeated Measure Design
+* Creare un modello a effetti misti per esplorare semplici misure ripetute o design annidati.
+* Interpretare l'output di un modello a effetti misti
 
-Let's consider this simple repeated measure design.
+# Design a misure ripetute
 
-We are interested in evaluating the effect of the dopaminergic agonist bromocriptine on the growth of prolactinomas (pituitary adenomas secreting prolactin). We take 45 mice and randomly assign them to one of three groups (15/group).
+Consideriamo un semplice design a misure ripetut.
 
-The control group receives a sham surgery, while the other two groups receive a subcutaneous implant containing either 1 or 10 mg bromocriptine. We then follow the adenoma growth over time by measuring plasma levels of prolactin (PRL).
+Siamo interessati a valutare l'effetto dell'agonista dopaminergico bromocriptina sulla crescita dei prolattinomi (adenomi pituitari che secernono prolattina). Prendiamo 45 topi e li assegnamo casualmente a uno dei tre gruppi (15 / gruppo).
 
-We have two fixed effects in this design: time and treatment, and a random effect, the mouse. Since each mouse is measured several times, measurements coming from the same animal will not be independent, thus the need for a mixed effect model.
+Il gruppo di controllo riceve un intervento chirurgico simulato, mentre gli altri due gruppi ricevono un impianto sottocutaneo contenente 1 o 10 mg di bromocriptina. Seguiamo quindi la crescita dell'adenoma nel tempo misurando i livelli plasmatici di prolattina (PRL).
 
-For this example, we start by loading the file `bromocriptine-workshop3.csv`
+Abbiamo due effetti fissi in questo design: tempo e trattamento, e un effetto casuale, il topo. Poiché ogni topo viene misurato più volte, le misure provenienti dallo stesso animale non saranno indipendenti, da cui la necessità di un modello a effetti misti.
+
+Per questo esempio, iniziamo caricando il file `bromocriptine-workshop3.csv`
 
 ```{r}
 bromocriptine <- read.csv("bromocriptine-workshop3.csv")
@@ -81,16 +82,16 @@ bromocriptine <- read.csv("bromocriptine-workshop3.csv")
 summary(bromocriptine)
 ```
 
-As usual, explore the data, try to plot it and see possible relationships between variables^[Refer to previous workshops if you do not remember how].
+Come al solito, esplora i dati, prova a tracciarli e vedere possibili relazioni tra variabili ^[Fai riferimento ai workshop precedenti se non ricordi come].
 
-I will also rearrange the order of the levels in the Group factor so that the control group is used as the reference level.
+Inoltre, riorganizziamo l'ordine dei livelli nel fattore `Group` in modo che il gruppo di controllo venga utilizzato come livello di riferimento.
 
 ```{r}
 bromocriptine$Group <- factor(bromocriptine$Group, 
                               levels = c("CTRL", "Bromo1", "Bromo10"))
 ```
 
-Below I have plotted the mean PRL values over time in the three groups^[As a challenge, try to reproduce this graph, you may post your code on the discussion board!]
+Qui sotto ho tracciato i valori medi di PRL nel tempo nei tre gruppi ^[Come sfida, prova a riprodurre questo grafico!]
 
 ```{r echo = FALSE, fig.height=3.5}
 brom.split <- split(bromocriptine, bromocriptine$Group)
@@ -102,19 +103,18 @@ mean.brom <- lapply(brom.split, function(x)
 
 plot(x ~ Time, mean.brom$CTRL, t = "o", pch = 20,
      bty = "n", ylim = c(0, 600), yaxt = "n",
-     xlab = "Time (days)", ylab = "PRL (ng/ml)")
+     xlab = "Tempo (giorni)", ylab = "PRL (ng/ml)")
 
 axis(2, seq(0, 600, 200), las = 1)
 lines(x ~ Time, mean.brom$Bromo1, t = "o", pch = 2, cex = 0.8)
 lines(x ~ Time, mean.brom$Bromo10, t = "o", pch = 5, cex = 0.8)
 
-legend("topleft", c("Control", "Bromocriptine (1 mg)", 
-                    "Bromocriptine (10 mg)"), pch = c(20, 2, 5),
+legend("topleft", c("Controllo", "Bromocriptina (1 mg)", 
+                    "Bromocriptina (10 mg)"), pch = c(20, 2, 5),
        cex = 0.8, bty = "n")
 ```
 
-It is clear that there is a dose-dependent effect of the drug, and that, overall, the change of PRL levels over time can be studied using a linear model. If we look at the responses of single mice we can see that they start more or less at the same level, but they then rise in different ways (with different slopes) depending on the treatment, but also within the treatment.
-
+È chiaro che esiste un effetto dose-dipendente del farmaco e che, nel complesso, il cambiamento dei livelli di PRL nel tempo può essere studiato utilizzando un modello lineare. Se osserviamo le risposte dei singoli topi possiamo vedere che iniziano più o meno allo stesso livello, ma poi aumentano in modi diversi (con pendenze diverse) a seconda del trattamento, ma anche all'interno del trattamento.
 ```{r echo = FALSE, warning = FALSE, fig.height = 3.2}
 library(ggplot2)
 
@@ -123,7 +123,7 @@ ggplot(aes(Time, PRL, group = interaction(Group, Mouse), col = Group),
 theme(legend.position="bottom")
 ```
 
-We can see individual mice differences are not too pronounced at time 0.
+Possiamo vedere come le differenze individuali tra i topi non siano molto pronunciate al tempo 0.
 
 ```{r, fig.height = 3.5, echo = FALSE}
 boxplot(PRL ~ Group, data = bromocriptine, 
@@ -135,7 +135,9 @@ stripchart(PRL ~ Group, data = bromocriptine,
            jitter = 0.1, vertical = TRUE, add = TRUE)
 ```
 
-Let's now proceed and build our model ^[Remember to load the nlme package first!]. We model the fixed effects Group and Time, as well as their interaction, and we model Mouse as the random factor. We create a random slope model, since what seems to be variable amongst subjects is the slope. We specify the random effect as `Time - 1 | Mouse`, meaning that we want to use mouse as a random effect, and we want to have random slopes over Time but not random intercepts (hence the -1).
+Costruiamo ora il nostro modello ^[Ricorda di caricare prima il pacchetto nlme!].
+Modelliamo il gruppo e il tempo come effetti fissi, così come la loro interazione, e modelliamo `Mouse` come fattore casuale.
+Creiamo un modello di pendenza casuale, dal momento che ciò che sembra essere variabile tra i soggetti è la pendenza. Specifichiamo l'effetto casuale come `Time - 1 | Mouse`, nel senso che vogliamo usare il mouse come un effetto casuale, e vogliamo avere pendenze casuali sul Tempo ma non intercette casuali (da cui il -1).
 
 ```{r, size = "small", width = 80}
 model <- lme(PRL ~ Group * Time, data = bromocriptine, 
@@ -143,25 +145,26 @@ model <- lme(PRL ~ Group * Time, data = bromocriptine,
 summary(model)
 ```
 
-This is a fairly complex model, the important parts that we want to look at in the summary are:
 
-- AIC, BIC and logLik: these are goodness-of-fit measure. For both AIC and BIC the smaller the better, for the log-likelyhood, the higher the better.
-- The random effect part gives us the standard deviations for the random effects and the residuals (remember from the lectures, these derive from two independent normal distribution).
-- The fixed effect part gives us the estimates for the model coefficients.
-In this case, the intercept 17.23 is the PRL level for a mouse in the control group (because this is the reference level of our Group variable), at time 0. The other coefficients are interpreted as we have seen in workshop #2. Note that there is, as expected, a strong interaction between time and treatment, i.e. PRL varies differently over time for different treatments.
-- A correlation table. For most, if not all, of the situations you will be dealing with you can safely ignore this.
-- A summary of the distribution of residuals
-- The number of observations and groups. You can use this to check that you have correctly specified your experiment structure in the model. We have a total of 270 observations (you can check this by running `ncol(bromocriptine)`) and 45 groups (i.e. experimental units), corresponding to the 45 mice. This tells us that R has understood that those 270 observations are not independent, but come from 45 mice, therefore multiple observations are associated with the same mouse.
+Questo è un modello abbastanza complesso, le parti importanti che vogliamo vedere nel sommario sono:
+
+- `AIC`, `BIC` e `logLik`: sono misure di bontà del fit. Sia per `AIC` che per `BIC` più piccolo il valore, migliore è il fit; per la _log likelihood`, più alta è meglio.
+- La parte dell'effetto casuale ci dà le deviazioni standard per gli effetti casuali e per i residui.
+- La parte a effetti fissi ci fornisce le stime per i coefficienti del modello.
+In questo caso, l'intercetta 17.23 è il livello PRL per un topo nel gruppo di controllo (poiché questo è il livello di riferimento della nostra variabile di gruppo), al tempo 0. Gli altri coefficienti sono interpretati come abbiamo visto nella lezione #2. Si noti che esiste, come previsto, una forte interazione tra tempo e trattamento, cioè PRL varia in modo diverso nel tempo per trattamenti diversi.
+- Una tabella di correlazione. Per la maggior parte, se non tutte, delle situazioni con cui ti occuperai, puoi tranquillamente ignorarla.
+- Un riassunto della distribuzione dei residui
+- Il numero di osservazioni e gruppi. Puoi utilizzare questi numeri per verificare di aver correttamente specificato la struttura dell'esperimento nel modello. Abbiamo un totale di 270 osservazioni (puoi verificare eseguendo `ncol(bromocriptina)`) e 45 gruppi (cioè unità sperimentali), corrispondenti ai 45 topi. Questo ci dice che R ha capito che quelle 270 osservazioni non sono indipendenti, ma provengono da 45 topi, quindi più osservazioni sono associate allo stesso topo.
 
 \newpage
 
-We can check the distribution of residuals over the fitted values as usual (although the output has a slight different format compared to `lm`)
+Possiamo controllare come di consueto la distribuzione dei residui rispetto ai valori fittati (sebbene l'output abbia un formato leggermente diverso rispetto a `lm`)
 
 ```{r}
 plot(model, pch = 20)
 ```
 
-Let's now explore the distribution of the random effects and compare it with that of the residuals. The `random.effects` function returns the random effects. We can combine it with hist and we can see that random effects come from a normal distribution, as expected, with a different variance as that of the residuals (notice the different x scale).
+Analizziamo ora la distribuzione degli effetti casuali e confrontiamola con quella dei residui. La funzione `random.effects` restituisce gli effetti casuali. Possiamo combinarla con `hist` e possiamo vedere che gli effetti casuali provengono da una distribuzione normale, come previsto, con una varianza diversa da quella dei residui (notare la diversa scala x).
 
 ```{r echo = F}
 par(mar = c(2, 4, 2, 2))
@@ -172,21 +175,21 @@ head(random.effects(model))
 
 par(mfrow = c(2, 1))
 hist(random.effects(model)$Time, main = "", col = "black", 
-     xlab = "Random effects", las = 1)
-hist(resid(model), main = "", col = "black", xlab = "Residuals",
+     xlab = "Effetti casuali", las = 1)
+hist(resid(model), main = "", col = "black", xlab = "Residui",
      las = 1)
 ```
 ```{r, echo = F}
 par(mfrow = c(1, 1))
 ```
 
-We can also check that R has correctly fitted a random slope model.
+Possiamo anche verificare che R abbia fittato correttamente un modello di pendenza casuale.
 
 ```{r, width = 80, size = "small"}
 head(coef(model))
 ```
 
-Note how all coefficients are the same for all the animals, but the slope for time has been changed for each animal. For instance, let's plot the data for mice 1 and 6. These are both control mice, but have quite different profiles.
+Nota come tutti i coefficienti sono uguali per tutti gli animali, ma la pendenza per il tempo è stata cambiata per ciascun animale. Ad esempio, tracciamo i dati per i topi 1 e 6. Questi sono entrambi topi di controllo, ma hanno profili abbastanza diversi.
 
 ```{r, fig.height = 3}
 plot(PRL ~ Time, bromocriptine, subset = bromocriptine$Mouse == 1, 
@@ -195,9 +198,9 @@ lines(PRL ~ Time, bromocriptine, subset = bromocriptine$Mouse == 6,
       col = "blue")
 ```
 
-Indeed, looking at the fitted slopes, they are 3.96 and 1.91, while the intercept is 17.24 for both.
+Infatti, guardando le pendenze fittate, sono 3.96 e 1.91, mentre l'intercetta è 17.24 per entrambi.
 
-We can use `abline` to add those to the plot above.
+Possiamo usare `abline` per aggiungere le due rette fittate al grafico.
 
 ```{r eval = F}
 abline(17.24, 3.96, lty = "dashed")  # Mouse 1
@@ -213,7 +216,7 @@ abline(17.24, 3.96, lty = "dashed")
 abline(17.24, 1.91, col = "blue", lty = "dashed")
 ```
 
-Finally, let's use `emmeans` to compare the three different treatments. We use an extra argument here (`cov.reduce = range`) to tell emmeans to look at the range of the continuous variable time. If we do not use that, `emmeans` and `pairs` will make comparisons only at the mean time (that is, 75).
+Infine, usiamo `emmeans` per confrontare i tre diversi trattamenti. Qui usiamo un argomento extra (`cov.reduce = range`) per dire a `emmeans` di guardare agli estremi [0, 150] dell'intervallo di tempo. Se non usiamo questo argomento, `emmeans` e` pairs` effettueranno confronti solo nel tempo medio (cioè, 75).
 
 ```{r warning = FALSE, message = FALSE, width = 80, size = "small"}
 library(emmeans)
@@ -223,8 +226,8 @@ pairs(marginals, by = "Time")
 
 ```
 
-Our post-hoc analysis has revealed  that there is a significant difference between all of the groups at time 150, but not at time 0.
-Should you want to test all of the times you could use `cov.reduce = unique`.
+La nostra analisi post-hoc ha rivelato che c'è una differenza significativa tra tutti i gruppi al tempo 150, ma non al momento 0.
+Se vuoi testare su tutti i tempi, puoi usare `cov.reduce = unique`.
 
 
 \newpage
