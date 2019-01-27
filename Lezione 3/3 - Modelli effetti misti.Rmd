@@ -4,7 +4,7 @@ author: "Nicola Romanò"
 #date: 05 October 2018
 output: 
   tufte::tufte_handout: default
-tufte::tufte_html: default
+  tufte::tufte_html: default
 ---
   
   ```{r setup, include=FALSE}
@@ -231,63 +231,69 @@ Se vuoi testare su tutti i tempi, puoi usare `cov.reduce = unique`.
 
 
 \newpage
-# Nested design - a split plot experiment
+# Design annidata: un esperimento "split plot"
 
-We will now analyse a split plot experiment as an example of a nested design^[This example is taken from Pinheiro and Bates, 2000].
+Analizzeremo ora un esperimento _split plot_ come esempio di design annidato ^[Questo esempio è tratto da Pinheiro e Bates, 2000].
 
-For this examples we will use the Oats dataset that comes with the `nlme` package (this is automatically loaded when you load `nlme`). 
+Per questo esempio utilizzeremo il set di dati `Oats` fornito con il pacchetto `nlme` (questo viene automaticamente caricato quando si carica `nlme`).
 
-These data comes from an example of split-plot design by Yates (1935). 
+Questi dati provengono da un esempio di split plot design di Yates (1935).
 
-The treatment structure used in the experiment was a 3 x 4 full factorial, with three varieties of oats and four concentrations of nitrogen. The experimental units were arranged into six blocks, each with three whole-plots subdivided into four subplots. The varieties of oats were assigned randomly to the whole-plots and the concentrations of nitrogen to the subplots. All four concentrations of nitrogen were used on each whole-plot.
+La struttura di trattamento utilizzata nell'esperimento era un fattoriale completo 3 x 4, con tre varietà di avena e quattro concentrazioni di azoto. Le unità sperimentali sono state disposte in sei blocchi, ciascuno con tre interi lotti suddivisi in quattro sotto-lotti. Le varietà di avena sono state assegnate casualmente ai lotti interi e alle concentrazioni di azoto nei sotto-lotti. Tutte e quattro le concentrazioni di azoto sono state utilizzate su ogni lotto.
 
-In this experiment we have six blocks of land, each of which is divided in 3 plots, each of which is further divided in 4 subplots.
-In each plot we grow one variety of grain (chosen at random), and in each subplot we use a different nitrogen concentration (nitrogen is used as a fertiliser). Because we have 4 subplots, we use 4 different nitrogen concentrations. The varieties of grain are called Golden Rain, Marvellous and Victory. Our output variable is the yield of the specific plot.
-This is a 3 x 4 full factorial design, meaning that each of the 3 variety was treated with each of the 4 nitrogen combinations (therefore it is "full", because all possible combinations are taken into account).
+In questo esperimento abbiamo sei appezzamenti di terra, ognuno dei quali è diviso in 3 lotti, ciascuno dei quali è ulteriormente suddiviso in 4 sotto-lotti.
+In ogni lotto coltiviamo una varietà di avena (scelta a caso), e in ogni sotto-lotto usiamo una diversa concentrazione di azoto (l'azoto è usato come fertilizzante). Poiché abbiamo 4 sotto-lotti, utilizziamo 4 diverse concentrazioni di azoto. Le varietà di avena sono chiamate Golden Rain, Marvelous e Victory. La nostra variabile di output è la resa del lotto specifica.
+Questo è un disegno fattoriale completo 3 x 4, il che significa che ciascuna delle 3 varietà è stata trattata con ciascuna delle 4 combinazioni di azoto (quindi è "completo", poiché tutte le possibili combinazioni sono prese in considerazione).
 
-We ask whether 1) nitrogen has an effect on yield and 2) whether the different varieties give different yields 3) if there is an interaction between the two.
+Ci chiediamo se 1) l'azoto ha un effetto sulla resa e 2) se le diverse varietà danno rese diverse 3) se c'è un'interazione tra i due.
 
-We start as usual by exploring and plotting the dataset
+Iniziamo come al solito esplorando e tracciando il set di dati
 
 ```{r size = "small", width = 80}
 summary(Oats)
 ```
 
 \newpage
-You can produce several interesting plots with these data, and I encourage you to do so. This is a plot summarising the relationship between the different variables.
+
+Puoi produrre diversi grafici interessanti con questi dati e ti invito a farlo. Questo è un grafico che riassume la relazione tra le diverse variabili.
 
 ```{r echo = FALSE}
 ggplot(aes(nitro, yield), group = Block, data = Oats) +
 geom_line(aes(col = Block)) +
 facet_wrap(~Variety) + 
-xlab("Nitrogen concentration") +
-ylab("Yield") +
+xlab("Concentrazione d'azoto") +
+ylab("Resa") +
 theme(legend.position = "bottom")
 ```
 
-We can see clear plot-to-plot differences, and it looks like yield grows approximatively linearly with nitrogen concentration.
+Possiamo vedere chiare differenze tra lotto e lotto, e sembra che il rendimento aumenti approssimativamente linearmente con la concentrazione di azoto.
 
-We now need to think about what are the random effects and how they are nested. We have 6 blocks, each divided in 3 plots (one per variety) and each divided in 4 subplots (one per nitrogen concentration).
-Because we only get one measure of yield from each subplot, we will not consider this as a random effect, but we will consider plots nested within blocks as our random effects.
+Ora dobbiamo pensare a quali sono gli effetti casuali e come sono nidificati. Abbiamo 6 appezzamenti, ciascuno diviso in 3 lotti (uno per varietà) e ciascuno diviso in 4 sotto-lotti (uno per ogni concentrazione di azoto).
+Poiché otteniamo solo una misura di rendimento da ciascun sotto-lotto, non considereremo questo come un effetto casuale, ma considereremo i lotti annidati all'interno degli appezzamenti come i nostri effetti casuali.
 
-Let's create our model!
+Creiamo il nostro modello!
+
 ```{r}
 model.oats <- lme(yield ~ nitro * Variety, data = Oats, random = ~ 1 | Block/Variety)
 ```
 
-Note that we have created a random intercept model (look at the graph above and think why we have done that!). Also, we are using Blocks and plots (we use Variety, since each plot is associated with a variety) as our random effects, nested within each other. Note that we list the larger factors first, then those contained within. If we had multiple levels of nesting we could indicate them using multiple / (e.g. City/School/Class)
+Nota che abbiamo creato un modello di intercettazione casuale (guarda il grafico qui sopra e pensa perché l'abbiamo fatto!).
+Inoltre, stiamo usando appezzamenti (`Block`) e lotti (usiamo `Variety`, poiché ogni lotto è associato ad una varietà) come i nostri effetti casuali, annidati l'uno nell'altro.
+Nota che elenchiamo prima i fattori più grandi, quindi quelli contenuti all'interno. Se avessimo più livelli di nidificazione, potremmo indicarli utilizzando più `/` (ad esempio Città / Scuola / Classe).
 
-Let's see the summary^[For a more concise output you can also do `anova(model.oats)`]
+Vediamo il sommario ^[Per un output più conciso puoi anche usare `anova(model.oats)`]
+
+
 ```{r size = "small", width = 80}
 summary(model.oats)
 ```
 
-We can see a clear effect of nitrogen, but not of variety, and no significant interactions.
-Also, note that the output is slightly different from the previous example in that
-- It tells us that there are 72 observations, from 18 plots (coded as Varieties) nested into 6 blocks.
-- The standard deviations in the random effect part of the summary are for intercept and residual rather than slope and residual as before, since we are fitting a random intercept model.
+Possiamo vedere un chiaro effetto dell'azoto, ma non della varietà e nessuna interazione significativa.
+Inoltre, si noti che l'output è leggermente diverso dall'esempio precedente in quanto:
+- Ci dice che ci sono 72 osservazioni, da 18 lotti (codificati come varietà) annidati in 6 appezzamenti.
+- Le deviazioni standard nella parte dell'effetto casuale del sommario sono per intercetta e residuo piuttosto che pendenza e residuo, poiché stiamo adattando un modello ad intercetta casuale.
 
-Since the interaction terms are not significant we can drop them and get a simpler model
+Poiché i termini di interazione non sono significativi, possiamo tralasciarli e ottenere un modello più semplice
 
 ```{r width = 80, size = "small"}
 model.oats.2 <- lme(yield ~ nitro + Variety, data = Oats, random = ~ 1 | Block/Variety)
@@ -295,10 +301,10 @@ model.oats.2 <- lme(yield ~ nitro + Variety, data = Oats, random = ~ 1 | Block/V
 summary(model.oats.2)
 ```
 
-The conclusion from the simpler model are essentially the same: a significant effect of nitrogen but not of variety. Also, the estimations for the random effects have only had minimal changes (look at the standard deviations for residuals and for the intercept).
+La conclusione del modello più semplice è essenzialmente la stessa: un effetto significativo dell'azoto ma non della varietà. Inoltre, le stime per gli effetti casuali hanno avuto solo modifiche minime (guarda le deviazioni standard per i residui e per l'intercetta).
 
-We can check that some the regressions make sense by plotting regression lines for different plots, just as we did before.
+Possiamo verificare che alcune regressioni abbiano senso tracciando le linee di regressione per diversi lotti.
 
 -----
 
-We have only scratched the surface of how to use mixed-effects models, and there is a lot more to it. For the scope of this course what we have done is more than enough, but if you are interested there are a lot of resources around to become an expert in this topic!
+Abbiamo solo scalfito la superficie di come usare modelli ad effetti misti, e c'è molto di più. Per lo scopo di questo corso ciò che abbiamo fatto è più che sufficiente, ma se sei interessato ci sono molte risorse in giro per diventare un esperto in questo argomento!
