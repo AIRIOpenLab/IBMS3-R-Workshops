@@ -231,7 +231,7 @@ Se vuoi testare su tutti i tempi, puoi usare `cov.reduce = unique`.
 
 
 \newpage
-# Design annidata: un esperimento "split plot"
+# Design annidato: un esperimento "split plot"
 
 Analizzeremo ora un esperimento _split plot_ come esempio di design annidato ^[Questo esempio è tratto da Pinheiro e Bates, 2000].
 

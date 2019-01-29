@@ -1,0 +1,448 @@
+---
+title: "R workshop #4: Modelli lineari generalizzati per l'analisi di dati categorici e limitati"
+author: "Nicola Romanò"
+
+output: 
+  tufte::tufte_handout: default
+  tufte::tufte_html: default
+---
+  
+```{r setup, include=FALSE}
+library(tufte)
+library(xtable)
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# See https://stackoverflow.com/questions/25646333/code-chunk-font-size-in-rmarkdown-with-knitr-and-latex
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) 
+{
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n\\normalsize"), x)
+})
+
+# See https://stackoverflow.com/questions/23349525/how-to-set-knitr-chunk-output-width-on-a-per-chunk-basis
+knitr::knit_hooks$set(width=local({
+  .width <- 0
+  function(before, options, envir) {
+    if (before) .width <<- options(width=options$width)
+    else options(.width)
+  }
+}))
+
+```
+
+# Introduzione
+  
+Nei workshop precedenti ci siamo occupati principalmente di situazioni in cui è stata misurata una variabile continua e abbiamo voluto spiegare la sua variabilità in funzione di una o più variabili continue o discrete.
+Usiamo le variazioni del modello lineare per farlo (ricordate, ANOVA può anche essere considerato solo come un modello lineare).
+
+Tuttavia, ci sono situazioni in cui un modello lineare non è la soluzione migliore da usare.
+
+Alcuni esempi:
+
+- Dati in cui misuriamo una variabile binaria (_p.es._ il soggetto ha il diabete? Sì / No) o una proporzione / probabilità (_p.es._ quali sono le probabilità di ottenere la patologia A, a seconda della variabile B?). Entrambi questi casi sono limitati tra 0 e 1 (nel primo caso la variabile può essere solo 0 o 1) o, se preferisci, 0% e 100%.
+
+- Conteggi. Questi sono numeri interi, quindi hanno un limite inferiore uguale a 0 (non puoi contare -20 cellule!).
+
+I modelli lineari sono molto potenti, ma sono problematici da utilizzare con dati limitati o discreti, in quanto presuppongono un intervallo continuo di valori che può assumere qualsiasi valore da $-\infty$ a $+\infty$.
+
+In questo workshop vedremo come superare alcuni di questi problemi usando i modelli lineari generalizzati (_GLM_) ^[Alcune persone usano invece l'acronimo _GLiMs_.].
+
+# Obiettivi formativi
+
+Dopo aver completato questo workshop sarai in grado di:
+
+- Descrivere il concetto di GLM e delle funzioni di collegamento
+
+- Creare e interpretare l'output dei GLM per gestire i dati discreti e limitati.
+
+\newpage
+
+# Una nota su $\chi^2$ e test di Fisher.
+
+Il modo più semplice di trattare i dati di conteggio è quello di utilizzare i test $\chi^2$ o Fisher. Puoi eseguire questi test in R, usando le funzioni _chisq.test_ o _fisher.test_.
+
+# Introduzione ai modelli lineari generalizzati (GLM)
+
+A questo punto, dovresti avere molta familiarità con l'equazione generica per un modello lineare:
+
+$Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_nX_n$
+
+Come detto sopra, questa equazione non va bene per rappresentare i dati delimitati, diciamo una proporzione o una probabilità che va da 0 a 1.
+
+In effetti, se dovessi modellare la proporzione di pazienti con una malattia in base a un determinato parametro X con un modello lineare potresti finire con qualcosa di simile:
+
+$\% pazienti = 0.02 + 2.5X$
+
+Ciò significa che se X è 50 il tuo modello dirà che il 125.02% dei pazienti ha la malattia, il che non è possibile. Allo stesso modo, se X può assumere un valore negativo, potresti ritrovarti con una percentuale negativa di pazienti che, di nuovo, non è possibile.
+
+Pertanto, abbiamo bisogno di introdurre alcune "non-linearità" nell'equazione sopra, che ci consente, ad esempio, di limitare la nostra risposta a tra 0 e 1.
+
+Il **Modello Lineare Generalizzato** risolve questo problema introducendo una "funzione di collegamento" _f_ tale che $f(Y)$ sia una combinazione lineare dei predittori. Inoltre, questi modelli rilassano l'ipotesi che i residui siano normalmente distribuiti (vedi sotto).
+
+&nbsp;
+
+$f(Y) = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_nX_n$
+
+&nbsp;
+
+Ad esempio, se _f_ è un logaritmo, vincolerà l'output del modello a un numero positivo, imponendo quindi un limite inferiore di 0 alla nostra risposta ^[I modelli lineari utilizzati finora utilizzano una "funzione di collegamento identità", che è semplicemente definita come $f(x) = x$. Puoi vedere come sono un caso speciale della versione generalizzata che stiamo introducendo in questo workshop.].
+
+Si noti che questo è ancora un modello lineare! Sebbene la relazione tra $Y$ e $f(Y)$ e tra $Y$ e i predittori $X_i$ non sia lineare, la relazione tra $f(Y)$ e $X_i$ lo è!
+
+Esistono diverse funzioni di collegamento utilizzate in contesti diversi. Ne considereremo solo due in questo workshop (le funzioni di collegamento _logit_ e _log_), ma il ragionamento è molto simile per qualsiasi funzione si possa finire usando ^[Si noti che non possiamo usare alcuna funzione arbitraria, ma questo è oltre la portata di questo corso!].
+
+\newpage
+
+# Regressione logistica
+
+Il primo tipo di applicazione di GLM che useremo è la *regressione logistica* ^[A volte nominata come *regressione logit*]. È un tipo di regressione usata per modellare risultati binari (0/1, sì/no), oltre a percentuali/proporzioni.
+
+Ad esempio, potremmo voler modellare le probabilità di un evento che si verifica ^[Probabilità definita come $odds ~ = ~ \dfrac{p(X)}{1-p(X)}$] in funzione di alcune variabili. Dal momento che vogliamo limitare la risposta a tra 0 e 1, modelliamo $log(odds)$.
+
+Possiamo scrivere:
+
+&nbsp;
+
+$log(odds(Y)) = log\Bigg(\dfrac{p(Y)}{1-p(Y)}\Bigg) = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_nX_n$
+
+&nbsp;
+
+dove _p(Y)_ è la probabilità che si verifichi _Y_.
+
+Come spiegato sopra, questo è un GLM; la funzione di collegamento utilizzata qui (_log(odds)_) è generalmente chiamata funzione di collegamento _logit_. Possiamo anche riscrivere il modello in termini di probabilità di _Y_, usando la funzione di collegamento inversa ^[In questo caso, poiché la funzione di collegamento è un logaritmo, il suo inverso è l'esponenziale.].
+
+&nbsp;
+
+$\dfrac{p(Y)}{1-p(Y)} = \dfrac {e^{\beta_0 + \beta_1X_1 + ... + \beta_nX_n}}{1 + e^{\beta_0 + \beta_1X_1 + ... + \beta_nX_n}} + \epsilon$
+
+&nbsp;
+
+La funzione di collegamento logit è definita solo nell'intervallo (0, 1) e il suo inverso assomiglia a questo:
+
+&nbsp;
+
+```{r echo = F, fig.height=2.5}
+x <- seq(-10, 10, 0.01)
+y <- exp(x)/(1+exp(x))
+
+par(mar = c(4, 4, 1, 2))
+plot(x, y, t = "l", pch = 20, xlab = "X", ylab = "Odds", 
+     las = 1, cex.axis = 0.8)
+```
+
+È quindi un'ottima scelta per modellare qualcosa che può esistere solo tra 0 e 1!
+
+\newpage
+
+# Dati binari
+
+Vediamo un esempio pratico. Iniziamo con un risultato binario ^[Questi dati sono presi da Payne, 1987, e analizzati anche in Faraway, 2006], ovvero se i bambini sviluppano malattie respiratorie nel loro primo anno di vita, a seconda del loro sesso e alimentazione.
+In particolare, vengono considerati tre tipi di alimentazione: bottiglia (_Bottle_), seno (_Breast_), e supplementi (_Suppl_).
+
+Inizia caricando il file _babyfood_workshop4.csv_
+
+```{r}
+babyfood <- read.csv("babyfood_workshop4.csv")
+babyfood
+# Riordina il fattore cibo per avere Breast come gruppo di riferimento
+babyfood$food <- factor(babyfood$food, levels = c("Breast", "Bottle", "Mix"))
+```
+
+Ora possiamo fittare il modello usando la funzione _glm_. Specifichiamo che i dati provengono da una distribuzione binomiale ^[Una distribuzione binomiale è buona per rappresentare la probabilità di successo in alcune prove] e una funzione di collegamento _logit_ ^[Si noti che _logit_ è il valore predefinito, quindi si può anche omettere di specificarlo].
+
+```{r}
+model <- glm(cbind(disease, nondisease) ~ sex + food, family = binomial(link = logit), 
+             data = babyfood)
+```
+
+Dovresti essere abbastanza familiare con questa notazione. Passiamo entrambi gli eventi di malattia e non di malattia, usando _cbind_ (binding di colonna) per "incollare" i valori insieme in una tabella con 2 colonne.
+
+Vediamo l'output del nostro modello!
+
+```{r size = "small", width = 80}
+summary(model)
+```
+
+Vediamo che l'intercetta è diversa da 0, in quanto rappresenta le probabilità basali di malattia per il gruppo di controllo (maschi allattati al seno). Vediamo che ci sono anche effetti significativi sia di sesso che di tipo di alimentazione.
+
+Ora, dovresti fare molta attenzione a interpretare questi coefficienti, perché ricorda che stiamo modellando _ln(odds)_, quindi dovremmo esponenziarli per ottenere le probabilità!
+
+Quindi, per esempio, per le bambine, $\hat\beta = -0.3126$
+
+```{r}
+exp(-0.3126)
+```
+
+Ciò significa che essere una bambina porta le probabilità di avere malattie respiratorie al 73,2%, rispetto al livello di riferimento (bambini).
+Puoi calcolare gli intervalli di confidenza per le stime usando la funzione _confint_ ^[In alternativa, puoi approssimare l'intervallo di confidenza del 95% usando $exp(\hat\beta\pm1.96 * SE_{\hat\beta})$. Ad esempio per $\hat\beta_1$ abbiamo $exp(-0.3126\pm1.96 * 0.1410)$, che ci dà $[0.5549041, 0.9644088]$, molto simile a quanto calcolato da _confint_. Nota come questi intervalli non sono simmetrici, dal momento che stiamo lavorando su una scala non lineare.]. Ricordati di esponenziarli in modo che tu possa parlare di probabilità, piuttosto che _log(odds)_!
+
+```{r}
+exp(confint(model))
+```
+
+Possiamo quindi dire che essere una bambina riduce le probabilità di avere malattie respiratorie al 73,2% (95% IC: [55,3, 96,3]) rispetto ai bambini. È possibile interpretare gli altri coefficienti in modo simile.
+
+Infine, il sommario del modello riporta anche una misura di _devianza_. Questa è una misura di bontà del fit utile per i GLM; in generale più bassa è la devianza, meglio è.
+
+Il riassunto riporta una devianza nulla di 26.38 su 5 gradi di libertà e una devianza residua di 0.72 su 2 gradi di libertà.
+La devianza nulla si riferisce al modello di sola intercetta (essenzialmente un modello nullo in cui diciamo che né il sesso né l'alimentazione hanno un effetto sulle probabilità della malattia). Dato che abbiamo 6 osservazioni, quel modello nullo ha 5 gradi di libertà. Il nostro modello attuale aggiunge 3 variabili (1 fittizia per sesso, 2 fittizie per l'alimentazione), quindi ha solo 2 gradi di libertà, ma ha una varianza molto ridotta, indicando che il nostro modello si adatta ai dati molto meglio di un modello di sola intercetta!
+
+Come abbiamo visto in un workshop precedente, possiamo usare la funzione _drop1_ per vedere il contributo di ciascun parametro del modello.
+
+```{r}
+drop1(model)
+```
+
+Banalmente, vediamo che rimuovere Sex o Food dal modello si traduce in un aumento della devianza (e un aumento dell'`AIC`, un'altra misura di bontà di fit per la quale, ancora una volta, valori bassi sono migliori).
+
+Ovviamente, guardando a questo tipo di dati dobbiamo sempre essere ben consapevoli che molti altri fattori di confusione (ad esempio lo stato socioeconomico) possono essere importanti da considerare.
+
+# Percentuali
+
+Lo stesso ragionamento vale per i set di dati in cui abbiamo misurato una probabilità o una percentuale.
+
+Ad esempio, cariciamo il file _smoking_workshop4.csv_. Questo file contiene dati sulla sopravvivenza ^[Doll, 2004] di 24321 medici britannici di sesso maschile nati tra il 1900 e il 1930, in relazione al fatto che siano fumatori o meno (questo include solo i fumatori che non abbiano mai smesso di fumare).
+
+```{r}
+smoking <- read.csv("smoking_workshop4.csv")
+head(smoking)
+```
+
+Proprio come prima, possiamo adattare un GLM.
+
+Prova a tracciare i dati, ad esempio ho ottenuto questo grafico:
+
+```{r echo = F}
+plot(Dead ~ Age, pch = 20, smoking, las = 1, bty = "n", t = "o", xlab="Età",
+     ylab = "% morti", subset = smoking$Smoker == "Y", col = "orange", lwd = 2)
+lines(Dead ~ Age, pch = 20, t = "o", smoking, subset = smoking$Smoker == "N", 
+      col = "navy", lwd = 2)
+legend("topleft", legend = c("Fumatori", "Non-fumatori"), lwd = 2, cex = 0.5, 
+       col = c("orange", "navy"), pch = 20)
+
+```
+
+Cosa concluderesti guardando i dati?
+
+Ora fittiamo un GLM a questi dati
+
+```{r}
+smoking$AgeAdj <- smoking$Age - 40
+
+model.2 <- glm(cbind(Dead, Alive) ~ AgeAdj + Smoker, 
+               family = binomial(link="logit"), data = smoking)
+```
+```{r width = 80, size = "small"}
+summary(model.2)
+```
+
+Noterai che anziché `Age` ho modellato `Age - 40`; questo influenzerà solo l'intercetta, rendendola più facile da interpretare. Non influenzerà gli altri coefficienti ^[Prova da solo! Guarda cosa succede quando usi `Age`. Se questo è fonte di confusione, prova a farlo su un modello lineare semplice, sarà più intuitivo lì.].
+
+L'intercetta è ~ -5.7. Questo rappresenta il `log(odds)` basale di morire per qualcuno al livello di riferimento (non fumatore) e ad `AgeAdj = 0`. Poiché `AgeAdj = Età - 40`, l'intercetta mostra il `log(odds)` basale per un non fumatore di 40 anni ^[Se modelliamo `Age` e non `AgeAdj`, l'intercetta si riferirebbe a 0 anni, che è probabilmente meno interessante.].
+
+Quindi, le probabilità di morire per un non fumatore di 40 anni sono
+
+```{r}
+exp(-5.709451)
+```
+
+Ricorda, queste sono _odds_, quindi sono $\dfrac{P(morte)}{1-P(morte)}$; questo valore è molto basso, rappresentativo del fatto che tutti i soggetti erano vivi all'età di 40 anni.
+
+Possiamo anche vedere un forte effetto dell'età sulla probabilità di morte ^[Immagino che non avessimo davvero bisogno di un modello per dirlo!], ed anche un significativo effetto del fumo.
+In particolare, il fumo aumenta le probabilità di morte di:
+
+```{r}
+exp(1.305192)
+```
+
+Il coefficiente per età è interpretato come il rapporto di _log(odds)_ per una differenza di età di 1 anno.
+
+Cioè: $\dfrac{odds(morte, età ~ x + 1)} {odds(morte, età ~ x)}$, dove le probabilità (_odds_) sono definite come sopra.
+
+Infine, possiamo controllare graficamente che il nostro modello si adatta correttamente ai dati.
+
+Possiamo chiedere al modello di prevedere i valori a diverse età per fumatori e non fumatori. Usiamo la funzione `predict` per questo. Questa funzione richiede una lista con elementi denominati come parametri del modello.
+
+Ad esempio, se volessimo prevedere i _log(odds)_ di morire per fumatori e non fumatori da 40 a 100 anni in step di 1 anno potremmo fare quanto segue:
+
+```{r}
+pred.age <- 40:100
+
+smokers <- list(AgeAdj = pred.age - 40,
+                Smoker = rep("Y", length(pred.age)))
+
+nonsmokers <- list(AgeAdj = pred.age - 40,
+                   Smoker = rep("N", length(pred.age)))
+```
+
+Ora possiamo usare _predict_ per chiedere al modello quale sarà il _log(odds)_ per questi nuovi punti dati ^[Il parametro `type = "response"` ci fornisce previsioni in termini di probabilità, piuttosto che _log(odds)_. Se lo ometti dovrai esponenziare i risultati. In generale, ti permetterà di vedere la previsione del modello in termini di $Y$ piuttosto che di $f(Y)$, dove $f$ è la funzione di collegamento.].
+
+```{r}
+pr.smokers <- predict(model.2, type = "response", newdata = smokers) * 100
+pr.nonsmoker <- predict(model.2, type = "response", newdata = nonsmokers) * 100
+```
+
+Ora possiamo tracciare la previsione in cima ai nostri dati, dimostrando che il modello funziona molto bene!
+
+```{r echo = FALSE}
+plot(Dead ~ Age, pch = 20, smoking, las = 1, bty = "n", xlab="Età",
+     ylab = "% morti", subset = smoking$Smoker == "Y", col = "orange", lwd = 2)
+points(Dead ~ Age, pch = 20, smoking, subset = smoking$Smoker == "N", 
+      col = "navy", lwd = 2)
+legend("topleft", legend = c("Fumatori", "Non-fumatori"), lwd = 2, cex = 0.5, 
+       col = c("orange", "navy"), pch = 20)
+
+
+lines(pred.age, pr.smokers, col = "orange", lwd = 2)
+lines(pred.age, pr.nonsmoker, col = "navy", lwd = 2)
+```
+
+## Quindi ... posso usare invece la regressione lineare?
+
+Come spiegato sopra, questa è probabilmente una cattiva soluzione. Vediamo cosa succede se usiamo `lm`.
+
+```{r}
+# Proporzione di soggetti deceduti
+smoking$PercDead <- smoking$Dead/(smoking$Dead+smoking$Alive)
+model.lm <- lm(PercDead ~ AgeAdj + Smoker, data = smoking)
+```
+
+Modellizziamo la percentuale di soggetti morti contro `Age - 40` e `Smoker`.
+
+```{r size = "small", width = 80}
+summary(model.lm)
+```
+
+Possiamo già vedere che abbiamo un'intercetta negativa che significa che a 40 anni ... -18% dei pazienti sono morti! Un grafico delle previsioni del modello ci mostra che il modello non funziona bene, specialmente per i non fumatori.
+
+```{r echo = FALSE}
+plot(Dead ~ Age, pch = 20, smoking, las = 1, bty = "n", 
+     xlim = c(40, 110), ylim = c(-20, 120), cex.axis = 0.85, xlab="Età",
+     ylab = "% morti", subset = smoking$Smoker == "Y", col = "orange", lwd = 2)
+points(Dead ~ Age, pch = 20, smoking, subset = smoking$Smoker == "N", 
+      col = "navy", lwd = 2)
+legend("topleft", legend = c("Fumatori", "Non-fumatori"), lwd = 2, cex = 0.5, 
+       col = c("orange", "navy"), pch = 20)
+abline(h = c(0, 100), lty = "dashed", col = "lightgray")
+age <- 0:70
+lines(age+40, predict(model.lm, list("AgeAdj" = 0:70, 
+                              "Smoker" = rep("Y", 71))) * 100, col = "orange", lwd = 2)
+lines(age+40, predict(model.lm, list("AgeAdj" = 0:70, 
+                              "Smoker" = rep("N", 71))) * 100, col = "navy", lwd = 2)
+```
+
+Allo stesso modo, si consideri un fumatore di 120 anni. Qual è la probabilità che sia morto secondo i due modelli?
+
+```{r}
+# Secondo la regressione logistica
+predict(model.2, list("AgeAdj" = 80, "Smoker" = "Y"), type = "response")
+# Secondi la regressione lineare
+predict(model.lm, list("AgeAdj" = 80, "Smoker" = "Y"))
+
+```
+
+Quindi, la regressione logistica ci dice che le probabilità di morte del paziente sono del 99,89%, mentre il modello lineare predice un valore del 138%!
+
+In breve, la regressione lineare non è una buona scelta per modellare dati binari o percentuali.
+
+# Conteggi
+
+Infine, vedremo un esempio di modello di conteggi. Questi sono spesso modellati usando quella che viene chiamata *regressione di Poisson*.
+
+Questa regressione viene fatta con un GLM che modella i dati di Poisson e una funzione di collegamento logaritmica ^[Proprio come sopra, scegliamo una distribuzione di Poisson perché è buona per modellare i conteggi, poiché è una distribuzione discreta, e la funzione di collegamento per limitare l'output a $Y ~> ~ 0$. Si noti che la distribuzione di Poisson non è sempre la scelta migliore per i conteggi, altre opzioni sono disponibili. Nello specifico, potresti voler evitare la regressione di Poisson in caso di un numero elevato di zeri nei tuoi dati (le distribuzioni _zero-inflated_ sono più adatte a questo) o in caso di sovraddispersione dei dati (la distribuzione binomiale negativa è più adatta a questo caso).], ottenuto semplicemente specificando `family = poisson (link = log)` nella chiamata a _glm_.
+
+
+Questo significa modellizzare:
+
+&nbsp;
+
+$log(Y) = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_nX_n$
+
+&nbsp;
+
+Consideriamo i dati in _lizards-workshop4.csv_. Questo insieme di dati mostra i conteggi di tre specie di lucertole (A, B e C) in tre posizioni diverse (da Loc1 a Loc3). Per ogni posizione le lucertole erano contate in tre diversi lotti di terra.
+
+```{r}
+lizards <- read.csv("lizards-workshop4.csv")
+summary(lizards)
+head(lizards)
+```
+\newpage
+
+Possiamo iniziare tracciando i dati:
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, fig.height=3.5}
+library(ggplot2)
+
+ggplot(lizards, aes(Count, fill = Species)) +
+  geom_histogram(alpha = 0.5, binwidth = 1) +
+  xlab("Numero di lucertole") +
+  ylab("Frequenza") + 
+  facet_wrap(~Location, nrow = 2)
+```
+
+Sembra che nelle posizioni 1 e 2 le specie A e C siano in numeri simili, superiori alla specie B. Tuttavia, nella posizione 3, tutte e tre le specie sembrano avere una frequenza simile.
+
+Questa non è una situazione ovvia da analizzare, vediamo come usare un GLM per modellarla!
+Per semplicità, considereremo i lotti come indipendenti, anche se dovresti aver notato che si tratta di un design annidato, quindi l'effetto casuale del lotto dovrebbe, in teoria, essere tenuto in considerazione! Se vuoi, puoi creare un GLM ad effetti misti ^[Ad esempio, usando la funzione _glmm_ nel pacchetto _glmm_ o la funzione _glmer_ nel pacchetto _lme4_], ma non lo spiegherò qui, quindi lo lascio alla tua curiosità!
+
+Iniziamo creando il GLM. Poiché abbiamo notato una chiara interazione Specie/Posizione, la aggiungiamo al nostro modello.
+Possiamo iniziare tracciando i dati:
+
+```{r}
+model.3 <- glm(Count ~ Species * Location, data = lizards, family = poisson(link = log))
+```
+
+```{r size = "small", width = 80}
+summary(model.3)
+```
+
+Questo è un output piuttosto complesso. Decifriamolo!
+Prima di tutto, ricorda cosa stiamo modellizzando:
+
+&nbsp;
+
+$log(Conteggi) = \beta_0 + \beta_1 * SpecieB + \beta_2 * SpecieC + \beta_3 * Posizione2 + \beta_4 * Posizione3 + (\text{interazioni, con coefficienti da }\beta_5 \text{a} \beta_8)$
+
+&nbsp;
+
+Dove _SpecieB_ e _SpecieC_ sono le due variabili fittizie utilizzate per rappresentare il fattore a tre livelli _Specie_ e _Posizione2_ e _Posizione3_ sono le due variabili fittizie utilizzate per rappresentare le posizioni.
+
+Quindi $\hat\beta_0$ è il $log(conteggi medi)$ per il livello basale (Specie A nella Posizione 1).
+
+Infatti, se controlliamo la media manualmente con:
+
+```{r}
+mean(lizards$Count[lizards$Location == "Loc1" & lizards$Species == "A"])
+```
+
+Possiamo vedere che il modello si avvicina abbastanza bene!
+
+```{r}
+exp(3.26767) # exp(beta1)
+```
+
+È possibile interpretare gli altri coefficienti in modo simile.
+Ad esempio $\beta_{SpecieC} = -0.08961$ ci dice che l'effetto della specie C è di diminuire i conteggi al $e^{-0.08961}\approx0.91\approx91\%$ del livello di riferimento.
+Di nuovo, possiamo calcolare gli intervalli di confidenza del 95% usando _confint_.
+
+```{r}
+exp(confint(model.3))
+```
+
+Quindi per la specie C i conteggi sono 91% (I.C. = (69.2%, 120%)) del livello di riferimento.
+
+Possiamo anche vedere che c'è una significativa interazione tra specie B e posizione 3. Questo non è inaspettato. Interpretare i coefficienti di interazione è sempre difficile, ma per fortuna possiamo usare il nostro amico fidato _emmeans_!
+
+```{r warning=FALSE, message=FALSE, width = 80, size = "small"}
+library(emmeans)
+marginals <- emmeans(model.3, ~ Species * Location)
+pairs(marginals, by = "Species", type = "response")
+```
+
+Come previsto, l'unico rapporto di coppia statisticamente significativo è tra le posizioni 1 e 3 per la specie B. La stima è 0.28, il che significa che i conteggi per la specie B in posizione 3 sono maggiori di circa $1/0.28\approx3.6$ volte i conteggi della specie B in posizione 1 (o, alternativamente, i conteggi nella posizione 1 sono circa il 28% di quelli nella posizione 3) ^[Un risultato simile può essere ottenuto direttamente sommando l'esponenziato $\hat\beta$].
+
+Questo workshop avrebbe dovuto darti gli strumenti di base per analizzare dati binari, proporzionali e di conteggio. Come sempre, stiamo solo grattando la superficie qui, ma questo dovrebbe essere un buon inizio, e se sei interessato a questi argomenti c'è molto da trovare!
+Questo è il tipo di modello lineare più avanzato che vedremo quest'anno. Il prossimo semestre esamineremo i modelli di classificazione e previsione e alcune tecniche statistiche più avanzate.
