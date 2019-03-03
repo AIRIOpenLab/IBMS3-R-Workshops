@@ -4,6 +4,8 @@ author:
  - Nicola Romanò
  - nicola.romano@ed.ac.uk
 output: pdf_document
+header-includes:
+   - \usepackage[italian]{babel}
 ---
 
 ```{r setup, include=FALSE}

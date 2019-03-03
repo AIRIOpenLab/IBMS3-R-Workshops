@@ -5,6 +5,8 @@ author: "Nicola Romanò"
 output: 
   tufte::tufte_handout: default
   tufte::tufte_html: default
+header-includes:
+   - \usepackage[italian]{babel}
 ---
   
   ```{r setup, include=FALSE}
